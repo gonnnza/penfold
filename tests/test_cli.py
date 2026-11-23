@@ -23,6 +23,19 @@ def test_init_creates_layout(tmp_path) -> None:
     assert again.exit_code == 1
 
 
+def test_dot_command_initializes_and_opens_dashboard(tmp_path, monkeypatch) -> None:
+    from penfold.cli import main as cli_main
+
+    calls: list[object] = []
+    monkeypatch.setattr(cli_main, "run_dashboard", lambda root: calls.append(root))
+    monkeypatch.chdir(tmp_path)
+
+    result = runner.invoke(app, ["."])
+    assert result.exit_code == 0, result.output
+    assert ProjectPaths(tmp_path).config_file.is_file()
+    assert calls == [tmp_path.resolve()]
+
+
 def test_global_project_option_works_from_any_directory(tmp_path, monkeypatch) -> None:
     project = tmp_path / "electrolux"
     assert runner.invoke(app, ["init", "--path", str(project)]).exit_code == 0

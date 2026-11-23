@@ -55,6 +55,17 @@ def _fail(message: str, code: int = 1) -> None:
     raise typer.Exit(code=code)
 
 
+def _initialize(paths: ProjectPaths, *, name: str | None = None, force: bool = False) -> None:
+    """Crea la estructura .orchestrator/ y sus definiciones por defecto."""
+    paths.init(name=name, force=force)
+    n_agents = install_default_agents(paths)
+    n_workflows = install_default_workflows(paths)
+    RunRepository(paths.db_path)
+    console.print(f"[green]✓[/green] Proyecto inicializado en {paths.base}")
+    console.print(f"  Agentes creados: {n_agents} · Workflows creados: {n_workflows}")
+    console.print("  Base de datos: " + str(paths.db_path))
+
+
 def _components(paths: ProjectPaths | None = None):
     paths = paths or find_project(PROJECT_ROOT)
     try:
@@ -111,16 +122,24 @@ def init(
     """Inicializar la configuración de Penfold en el proyecto actual."""
     try:
         paths = ProjectPaths(PROJECT_ROOT or path)
-        paths.init(name=name, force=force)
-        n_agents = install_default_agents(paths)
-        n_workflows = install_default_workflows(paths)
-        RunRepository(paths.db_path)
+        _initialize(paths, name=name, force=force)
     except PenfoldError as exc:
         _fail(str(exc))
-    console.print(f"[green]✓[/green] Proyecto inicializado en {paths.base}")
-    console.print(f"  Agentes creados: {n_agents} · Workflows creados: {n_workflows}")
-    console.print("  Base de datos: " + str(paths.db_path))
-    console.print("\nSiguiente paso: [cyan]penfold start[/cyan]")
+    console.print("\nSiguiente paso: [cyan]penfold start[/cyan] o [cyan]penfold tui[/cyan]")
+
+
+@app.command(".")
+def open_here() -> None:
+    """Inicializar la carpeta actual si hace falta y abrir el dashboard de terminal."""
+    root = PROJECT_ROOT or Path.cwd()
+    paths = find_project(root)
+    if not paths.exists():
+        try:
+            _initialize(paths)
+        except PenfoldError as exc:
+            _fail(str(exc))
+    console.print(f"[dim]Proyecto:[/dim] {paths.root}")
+    run_dashboard(paths.root)
 
 
 @app.command()
@@ -171,7 +190,7 @@ def start(
     ),
     port: int | None = typer.Option(None, "--port", help="Sobrescribe server.port."),
 ) -> None:
-    """Iniciar el servidor local y la interfaz visual."""
+    """Iniciar el servidor local (API REST y SSE)."""
     import uvicorn
 
     paths, config, *_ = _components()
