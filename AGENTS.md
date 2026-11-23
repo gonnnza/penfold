@@ -11,8 +11,7 @@ Orquestador visual **local-first** de agentes de IA para desarrollo de software,
 en MVP 0.1. Un workflow es un grafo declarativo en YAML que vive en el repo; el
 motor lo ejecuta en la máquina del usuario y expone progreso por SSE.
 
-- ✅ Grafo YAML versionado en `.orchestrator/`, editado por una UI React que
-  **guarda el YAML** (round-trip).
+- ✅ Grafo YAML versionado en `.orchestrator/`, editable directamente a mano.
 - ✅ Ejecución observable (eventos `RunEvent` con `seq`), reanudable
   (checkpoints) con revisión humana (`approval`).
 - ❌ **No** es un chatbot ni un wrapper de un CLI de IA: no se adivinan flags
@@ -33,8 +32,7 @@ HTTP — manda ante cualquier discrepancia),
 
 ```bash
 # Entorno
-uv sync --extra dev                 # backend
-cd web && pnpm install && cd ..     # frontend
+uv sync --extra dev                 # backend, CLI y TUI
 
 # Backend
 uv run pytest                       # tests
@@ -42,12 +40,7 @@ uv run ruff check .                 # lint (E, F, I, UP; line-length 100)
 uv run ruff format --check .        # comprueba formato sin modificar
 uv run ruff format .                # aplica formato
 uv run penfold --help               # fuente autoritativa de comandos disponibles
-uv run penfold init && uv run penfold doctor && uv run penfold start
-
-# Frontend
-cd web && pnpm test                 # Vitest
-cd web && pnpm build                # tsc --noEmit && vite build
-cd web && pnpm test:e2e             # Playwright
+uv run penfold init && uv run penfold doctor && uv run penfold tui
 ```
 
 > El entry point real es `penfold.cli.main:app` (`pyproject.toml`). Comprueba
@@ -57,22 +50,19 @@ cd web && pnpm test:e2e             # Playwright
 
 | Zona | Contenido |
 |---|---|
-| `src/penfold/models/` | **MODEL**: solo declaración de clases Pydantic/enums (`workflow`, `agent`, `execution`, `config`, `runtime`). Sin lógica. |
-| `src/penfold/services/` | **SERVICE**: toda la lógica de negocio (`engine`, `manager`, `validator`, `repository`, `stores`, `templates`, `approval`, `context`, `events`, `runtimes/`). |
+| `src/penfold/models/` | **MODEL**: solo declaración de clases Pydantic/enums (`workflow`, `agent`, `execution`, `config`, `runtime`, `git`). Sin lógica. |
+| `src/penfold/services/` | **SERVICE**: toda la lógica de negocio (`engine`, `manager`, `validator`, `repository`, `stores`, `templates`, `approval`, `context`, `events`, `git`, `runtimes/`). |
 | `src/penfold/views/` | **VIEW**: endpoints FastAPI, SSE y middleware de token (`app.py`, `auth.py`). 23 rutas. |
 | `src/penfold/tui/` | **TUI**: dashboard Rich de terminal (`penfold tui`). Llama a services en proceso, sin HTTP ni token. |
-| `src/penfold/cli/` | Typer + Rich: `init`, `doctor`, `start`, `tui`, `run`, `runs`, `inspect`, `logs`, `cancel`, `resume`, grupos `workflow`/`agent`. Adaptador de entrada. |
-| `src/penfold/config/paths.py` | Infraestructura: localiza `.orchestrator/` y el build del frontend. |
+| `src/penfold/cli/` | Typer + Rich: `init`, `doctor`, `start`, `tui`, `run`, `runs`, `inspect`, `logs`, `cancel`, `resume`, grupos `workflow`/`agent`/`git`. Adaptador de entrada. |
+| `src/penfold/config/paths.py` | Infraestructura: localiza `.orchestrator/`. |
 | `src/penfold/utils.py` | Utilidades puras compartidas (`utcnow`), neutras entre capas. |
-| `src/penfold/integrations/git.py` | Helper Git no destructivo; **no conectado al motor** en 0.1. |
-| `web/src/` | React 19 + TS + Vite + `@xyflow/react` + zustand + lucide. |
-| `tests/` | pytest + httpx + pytest-asyncio. `web/src/*.test.ts` Vitest, `web/e2e/` Playwright. |
+| `tests/` | pytest + httpx + pytest-asyncio. |
 | `examples/` | `simple`, `feature-development`, `approval-demo`, agentes de ejemplo. |
 
-Build del frontend: `web/dist` (ignorado por Git) y **una sola copia
-versionada** en `apps/server/static/`. Hatchling genera `penfold/static` dentro
-del wheel desde esa copia mediante `force-include` (ADR-0007). Si cambias la UI,
-**recompila** con `cd web && pnpm build` y sincroniza `apps/server/static/`.
+**No hay frontend web.** No existe `web/`, ni bundle estático, ni dependencias
+Node/pnpm. La interfaz es la TUI (`penfold tui`) y la CLI; el servidor solo
+expone la API REST y SSE.
 
 ## 4. Reglas de oro (invariantes)
 
@@ -131,21 +121,22 @@ del wheel desde esa copia mediante `force-include` (ADR-0007). Si cambias la UI,
    contrato/esquema y después código + docs. Cambios de `schema_version`
    requieren discusión previa.
 3. Implementa el cambio con tests.
-4. Pasa `uv run ruff check .`, `uv run pytest` y, si toca la UI,
-   `cd web && pnpm test && pnpm build`.
+4. Pasa `uv run ruff check .` y `uv run pytest`. No hay frontend que compilar.
 5. Actualiza este `AGENTS.md` y `skills.md` con cualquier convención, decisión o
    trampa nueva. Añade entrada en el registro de cambios de ambos.
 
 ## 7. Trampas conocidas
 
-- El build del frontend está duplicado en tres rutas; cambiar solo `web/` no
-  actualiza lo que sirve el paquete instalado.
-- `penfold start` imprime URL + token; la UI guarda el token en `localStorage`
-  y también consume `?token=`. Sin token, los endpoints devuelven error.
+- No hay interfaz web: el servidor solo expone API + SSE. Para usar el proyecto
+  de forma interactiva, `penfold tui` (o los comandos de la CLI).
+- `penfold start` imprime URL + token; el token se conserva en
+  `.orchestrator/state/server.token` (`0600`). Sin token, los endpoints
+  devuelven error.
 - Los runs `running` interrumpidos pasan a `paused` al arrancar; se reanudan con
   `POST /api/runs/{id}/resume` sin repetir nodos exitosos.
-- El helper `penfold.integrations.git` existe pero **no** está integrado en el
-  motor: no lo llames desde la ejecución sin un ADR nuevo.
+- `penfold.services.git.GitService` existe pero **no** está integrado en el
+  motor: no lo llames desde la ejecución sin un ADR nuevo. Su modelo es
+  `penfold.models.git.RepoInfo` y su vista de solo lectura es `penfold git`.
 - Parte de la documentación se reubicó en `docs/` (`ARCHITECTURE.md`,
   `PROJECT_SPEC.md`, `CONTRIBUTING.md`, `DATA_MODEL.md`), mientras `README.md`,
   `ROADMAP.md`, `SECURITY.md` y `WORKFLOW_SCHEMA.md` siguen en la raíz. Algunos
@@ -162,3 +153,5 @@ del wheel desde esa copia mediante `force-include` (ADR-0007). Si cambias la UI,
 | 2026-11-23 | Refactor a MVC: `models/` (solo clases), `services/` (lógica), `views/` (endpoints). ADR-0006. 33 tests pasan. | — |
 | 2026-11-23 | Dashboard Rich de terminal (`penfold tui`, capa `tui/`). 35 tests pasan. | — |
 | 2026-11-23 | Eliminada la copia duplicada `src/penfold/static/`; el wheel genera `penfold/static` desde `apps/server/static` con `force-include`. ADR-0007. | — |
+| 2026-11-23 | Eliminado todo el frontend web (`web/`, bundle estático, rutas de UI, `force-include` y ADR-0007). La TUI y la CLI son la única interfaz. | — |
+| 2026-11-23 | Git dividido en MVC: `models/git.py` (`RepoInfo`), `services/git.py` (`GitService`) y vista CLI `penfold git`. Sin cambios en el motor. | — |
