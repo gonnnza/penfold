@@ -71,8 +71,8 @@ cd web && pnpm build      # comprueba que la UI compila
    `config` en la tabla de nodos de
    [API_CONTRACT.md](docs/development/API_CONTRACT.md).
 2. Añade el valor al tipo `NodeType` y las reglas de validación
-   (`src/penfold/workflows`).
-3. Implementa el ejecutor del nodo en `src/penfold/execution` con transiciones
+   (`src/penfold/services`).
+3. Implementa el ejecutor del nodo en `src/penfold/services` con transiciones
    `pending → ready → running → succeeded|failed`, emisión de `RunEvent` y
    actualización de `NodeState`.
 4. Si el nodo produce salida, documenta cómo se referencia con
@@ -82,7 +82,7 @@ cd web && pnpm build      # comprueba que la UI compila
 ## Cómo agregar un runtime
 
 Implementa el protocolo `AgentRuntime` (`execute` / `validate` / `healthcheck`)
-en `src/penfold/runtimes` y regístralo. La firma conceptual y las advertencias
+en `src/penfold/services/runtimes` y regístralo. La firma conceptual y las advertencias
 están en [docs/development/EXTENDING.md](docs/development/EXTENDING.md).
 
 - No asumas parámetros de CLI comunes (`--model`, `-p`, `--prompt`, `--continue`,

@@ -7,7 +7,7 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-from penfold.server.app import create_app
+from penfold.views.app import create_app
 
 TOKEN = "test-token"
 

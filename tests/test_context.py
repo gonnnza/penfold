@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from penfold.errors import ContextResolutionError
-from penfold.execution.context import ContextResolver
+from penfold.services.context import ContextResolver
 
 
 def test_resolves_literals_inputs_outputs_and_status() -> None:

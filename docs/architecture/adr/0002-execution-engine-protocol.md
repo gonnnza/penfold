@@ -23,7 +23,7 @@ ella.
 
 ## Decisión
 
-Definir un **protocolo propio `ExecutionEngine`** en `src/penfold/execution`,
+Definir un **protocolo propio `ExecutionEngine`** en `src/penfold/services`,
 con una interfaz intercambiable. El motor es responsable de:
 
 - validar y compilar el `WorkflowDefinition` en un grafo ejecutable,

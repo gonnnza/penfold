@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import yaml
 
-from penfold.agents.models import AgentDefinition
 from penfold.config.paths import ProjectPaths
+from penfold.models.agent import AgentDefinition
 
 
 def _agent(

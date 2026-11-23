@@ -7,10 +7,10 @@ import copy
 import pytest
 from pydantic import ValidationError as PydanticValidationError
 
-from penfold.workflows.models import WorkflowDefinition
-from penfold.workflows.store import WorkflowStore
-from penfold.workflows.templates import default_workflows
-from penfold.workflows.validator import cyclic_edges, validate_workflow
+from penfold.models.workflow import WorkflowDefinition
+from penfold.services.validator import cyclic_edges, validate_workflow
+from penfold.services.workflow_store import WorkflowStore
+from penfold.services.workflow_templates import default_workflows
 
 
 def _issues(workflow, **kwargs):

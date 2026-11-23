@@ -11,7 +11,7 @@ import copy
 from typing import Any
 
 from penfold.errors import CancelledError
-from penfold.runtimes.base import AgentRuntime, RuntimeContext, RuntimeResult
+from penfold.services.runtimes.base import AgentRuntime, RuntimeContext, RuntimeResult
 
 
 class MockRuntime(AgentRuntime):

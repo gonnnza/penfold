@@ -10,8 +10,8 @@ import signal
 from pathlib import Path
 
 from penfold.errors import CancelledError, ExecutionError, PermissionDeniedError
-from penfold.runtimes.base import AgentRuntime, RuntimeContext, RuntimeResult
-from penfold.runtimes.secrets import redact
+from penfold.services.runtimes.base import AgentRuntime, RuntimeContext, RuntimeResult
+from penfold.services.runtimes.secrets import redact
 
 _SHELL_META = set(";&|`$><\n\r")
 

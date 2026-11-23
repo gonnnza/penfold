@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from penfold.workflows.models import WorkflowDefinition, WorkflowEdge
+from penfold.models.workflow import WorkflowDefinition, WorkflowEdge
 
 VALID_OPS = {"eq", "ne", "gt", "gte", "lt", "lte", "contains", "in", "exists"}
 

@@ -5,9 +5,9 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from penfold.errors import ExecutionError
-from penfold.runtimes.base import AgentRuntime
-from penfold.runtimes.command import CommandRuntime
-from penfold.runtimes.mock import MockRuntime
+from penfold.services.runtimes.base import AgentRuntime
+from penfold.services.runtimes.command import CommandRuntime
+from penfold.services.runtimes.mock import MockRuntime
 
 Factory = Callable[[], AgentRuntime]
 

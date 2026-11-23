@@ -16,8 +16,6 @@ from typing import Any
 from jsonschema import ValidationError as SchemaValidationError
 from jsonschema import validate as validate_schema
 
-from penfold.agents.store import AgentStore
-from penfold.config.models import ProjectConfig
 from penfold.config.paths import ProjectPaths
 from penfold.errors import (
     CancelledError,
@@ -27,24 +25,26 @@ from penfold.errors import (
     PermissionDeniedError,
     ValidationError,
 )
-from penfold.execution.approval import ApprovalDecision, ApprovalGate
-from penfold.execution.context import ContextResolver
-from penfold.execution.events import EventBus
-from penfold.execution.models import (
+from penfold.models.config import ProjectConfig
+from penfold.models.execution import (
     ApprovalInfo,
     NodeState,
     NodeStatus,
     RunDetail,
     RunEvent,
     RunStatus,
-    utcnow,
 )
-from penfold.execution.repository import RunRepository
-from penfold.runtimes.base import RuntimeContext, RuntimeResult
-from penfold.runtimes.registry import get_runtime
-from penfold.runtimes.secrets import redact
-from penfold.workflows.models import WorkflowDefinition, WorkflowEdge, WorkflowNode
-from penfold.workflows.validator import cyclic_edges
+from penfold.models.workflow import WorkflowDefinition, WorkflowEdge, WorkflowNode
+from penfold.services.agent_store import AgentStore
+from penfold.services.approval import ApprovalDecision, ApprovalGate
+from penfold.services.context import ContextResolver
+from penfold.services.events import EventBus
+from penfold.services.repository import RunRepository
+from penfold.services.runtimes.base import RuntimeContext, RuntimeResult
+from penfold.services.runtimes.registry import get_runtime
+from penfold.services.runtimes.secrets import redact
+from penfold.services.validator import cyclic_edges
+from penfold.utils import utcnow
 
 RETRYABLE = (ExecutionError, ContractError, ContextResolutionError, ValidationError)
 

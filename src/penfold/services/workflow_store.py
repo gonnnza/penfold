@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from penfold.config.paths import ProjectPaths
 from penfold.errors import NotFoundError
 from penfold.errors import ValidationError as PenfoldValidationError
-from penfold.workflows.models import WorkflowDefinition
+from penfold.models.workflow import WorkflowDefinition
 
 
 class WorkflowStore:

@@ -5,10 +5,10 @@ from __future__ import annotations
 import yaml
 from pydantic import ValidationError
 
-from penfold.agents.models import AgentDefinition
 from penfold.config.paths import ProjectPaths
 from penfold.errors import NotFoundError
 from penfold.errors import ValidationError as PenfoldValidationError
+from penfold.models.agent import AgentDefinition
 
 
 class AgentStore:

@@ -8,11 +8,11 @@ from pathlib import Path
 import pytest
 
 from penfold.errors import ExecutionError, PermissionDeniedError
-from penfold.runtimes.base import RuntimeContext
-from penfold.runtimes.command import CommandRuntime
-from penfold.runtimes.mock import MockRuntime
-from penfold.runtimes.registry import available_runtimes, get_runtime
-from penfold.runtimes.secrets import redact
+from penfold.services.runtimes.base import RuntimeContext
+from penfold.services.runtimes.command import CommandRuntime
+from penfold.services.runtimes.mock import MockRuntime
+from penfold.services.runtimes.registry import available_runtimes, get_runtime
+from penfold.services.runtimes.secrets import redact
 
 
 def _context(tmp_path: Path, command: str, **options) -> RuntimeContext:

@@ -14,8 +14,8 @@ from pathlib import Path
 
 import yaml
 
-from penfold.config.models import ProjectConfig
 from penfold.errors import NotFoundError, ProjectError
+from penfold.models.config import ProjectConfig
 
 CONFIG_DIR = ".orchestrator"
 CONFIG_FILE = "config.yaml"

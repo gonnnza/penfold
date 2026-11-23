@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import asyncio
 
-from penfold.agents.models import AgentDefinition
-from penfold.execution.approval import ApprovalDecision, AutoApproveGate
-from penfold.execution.models import NodeState, NodeStatus, RunDetail, RunStatus
-from penfold.workflows.models import WorkflowDefinition
-from penfold.workflows.templates import default_workflows
+from penfold.models.agent import AgentDefinition
+from penfold.models.execution import NodeState, NodeStatus, RunDetail, RunStatus
+from penfold.models.workflow import WorkflowDefinition
+from penfold.services.approval import ApprovalDecision, AutoApproveGate
+from penfold.services.workflow_templates import default_workflows
 
 
 async def _finish(manager, run_id: str, timeout: float = 10.0):

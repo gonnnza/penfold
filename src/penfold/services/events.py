@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections import defaultdict
 
-from penfold.execution.models import RunEvent
+from penfold.models.execution import RunEvent
 
 
 class EventBus:

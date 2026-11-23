@@ -10,9 +10,6 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Streamin
 from fastapi.staticfiles import StaticFiles
 
 from penfold import __version__
-from penfold.agents.models import AgentDefinition
-from penfold.agents.store import AgentStore
-from penfold.config.models import ProjectConfig
 from penfold.config.paths import ProjectPaths
 from penfold.errors import (
     NotFoundError,
@@ -21,14 +18,17 @@ from penfold.errors import (
     ProjectError,
     ValidationError,
 )
-from penfold.execution.events import EventBus
-from penfold.execution.manager import RunManager
-from penfold.execution.models import ApprovalRequest, RunEvent, StartRunRequest
-from penfold.execution.repository import RunRepository
-from penfold.server.auth import TokenMiddleware
-from penfold.workflows.models import WorkflowDefinition
-from penfold.workflows.store import WorkflowStore
-from penfold.workflows.validator import validate_workflow
+from penfold.models.agent import AgentDefinition
+from penfold.models.config import ProjectConfig
+from penfold.models.execution import ApprovalRequest, RunEvent, StartRunRequest
+from penfold.models.workflow import WorkflowDefinition
+from penfold.services.agent_store import AgentStore
+from penfold.services.events import EventBus
+from penfold.services.manager import RunManager
+from penfold.services.repository import RunRepository
+from penfold.services.validator import validate_workflow
+from penfold.services.workflow_store import WorkflowStore
+from penfold.views.auth import TokenMiddleware
 
 STATUS_BY_ERROR: dict[type[Exception], int] = {
     NotFoundError: 404,

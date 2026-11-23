@@ -22,7 +22,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
-from penfold.execution.models import (
+from penfold.models.execution import (
     ApprovalInfo,
     NodeState,
     RunDetail,

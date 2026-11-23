@@ -14,10 +14,10 @@ Los tipos del MVP son `input`, `agent`, `command`, `condition`, `approval` y
 2. **Esquema YAML**: añade el tipo a `NodeType` y las claves de `config` en la
    tabla de nodos de [API_CONTRACT.md](API_CONTRACT.md); documenta los campos en
    [WORKFLOW_SCHEMA.md](../../WORKFLOW_SCHEMA.md).
-3. **Validación**: registra las reglas del nuevo tipo en `src/penfold/workflows`
+3. **Validación**: registra las reglas del nuevo tipo en `src/penfold/services`
    (ids, campos obligatorios, referencias). Un error de validación debe
    asociarse a un `path` y una severidad.
-4. **Ejecutor**: implementa un `NodeExecutor` en `src/penfold/execution` que:
+4. **Ejecutor**: implementa un `NodeExecutor` en `src/penfold/services` que:
    - resuelve `config.inputs` con los mapeos declarativos,
    - emite eventos antes y después de la ejecución,
    - actualiza `NodeState` (`pending → ready → running → succeeded | failed`),
@@ -35,11 +35,12 @@ Un runtime es la forma en que un nodo `agent` obtiene su salida. La interfaz es
 intercambiable y el motor solo depende de ella.
 
 Firma conceptual de `AgentRuntime` (contrato estable en
-`src/penfold/runtimes/base.py`; comprueba siempre el código antes de programar
+`src/penfold/services/runtimes/base.py`; comprueba siempre el código antes de programar
 contra ella):
 
 ```python
 from abc import ABC, abstractmethod
+
 
 class AgentRuntime(ABC):
     name: str = "base"
@@ -65,10 +66,10 @@ independiente de proveedores y de LangGraph ([ADR-0002](../architecture/adr/0002
 
 ```python
 {
-  "output": dict[str, Any],   # se valida contra agent.outputs.schema
-  "logs": list[str],
-  "artifacts": list[str],
-  "metadata": dict[str, Any],
+    "output": dict[str, Any],  # se valida contra agent.outputs.schema
+    "logs": list[str],
+    "artifacts": list[str],
+    "metadata": dict[str, Any],
 }
 ```
 

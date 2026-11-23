@@ -9,7 +9,7 @@ from __future__ import annotations
 import yaml
 
 from penfold.config.paths import ProjectPaths
-from penfold.workflows.models import WorkflowDefinition
+from penfold.models.workflow import WorkflowDefinition
 
 
 def simple_workflow() -> WorkflowDefinition:

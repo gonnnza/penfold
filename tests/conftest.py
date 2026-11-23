@@ -6,14 +6,14 @@ from pathlib import Path
 
 import pytest
 
-from penfold.agents.store import AgentStore
-from penfold.agents.templates import install_default_agents
 from penfold.config.paths import ProjectPaths
-from penfold.execution.events import EventBus
-from penfold.execution.manager import RunManager
-from penfold.execution.repository import RunRepository
-from penfold.workflows.store import WorkflowStore
-from penfold.workflows.templates import install_default_workflows
+from penfold.services.agent_store import AgentStore
+from penfold.services.agent_templates import install_default_agents
+from penfold.services.events import EventBus
+from penfold.services.manager import RunManager
+from penfold.services.repository import RunRepository
+from penfold.services.workflow_store import WorkflowStore
+from penfold.services.workflow_templates import install_default_workflows
 
 
 @pytest.fixture

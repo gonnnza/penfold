@@ -12,7 +12,6 @@ PermissionMode = Literal["read_only", "workspace_write", "restricted"]
 
 class RuntimeSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     type: RuntimeType = "mock"
     provider: str | None = None
     model: str | None = None
@@ -22,7 +21,6 @@ class RuntimeSpec(BaseModel):
 
 class Permissions(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     mode: PermissionMode = "workspace_write"
     read_paths: list[str] = Field(default_factory=lambda: ["."])
     write_paths: list[str] = Field(default_factory=list)
@@ -31,7 +29,6 @@ class Permissions(BaseModel):
 
 class AgentInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     name: str
     type: str = "string"
     required: bool = True
@@ -57,7 +54,6 @@ class MockBehavior(BaseModel):
 
 class AgentDefinition(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     schema_version: int = 1
     id: str
     name: str
