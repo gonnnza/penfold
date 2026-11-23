@@ -180,6 +180,7 @@ Guía completa: [Getting started](docs/user-guide/GETTING_STARTED.md).
 | `penfold runs` · `inspect <id>` · `logs <id> -f` | Lista y examina ejecuciones y eventos. |
 | `penfold cancel <id>` · `resume <id>` | Cancela o reanuda un run desde su checkpoint. |
 | `penfold workflow list` · `validate <id>` | Lista y valida definiciones YAML. |
+| `penfold workflow diagram <id>` | Dibuja el grafo del workflow en la terminal (nodos, ramas y bucles). |
 | `penfold agent list` | Lista los agentes configurados. |
 | `penfold git status` · `diff` · `worktrees` | Consulta el repositorio Git local. |
 
