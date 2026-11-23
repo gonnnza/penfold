@@ -32,10 +32,10 @@ src/penfold/
 └── integrations/  # punto de extensión futuro (sin producto concreto en 0.1)
 ```
 
-El entry point es `penfold = penfold.cli.main:app`. El frontend vive por
-separado en `web/` (React + pnpm) y se construye con `pnpm build`; el servidor
+El entry point es `penfold = penfold.cli.main:app`. No hay frontend web: la
+interfaz es la TUI de terminal. El servidor
 sirve el resultado. Es decir: **monorepo con dos apps** (`src/penfold` y
-`web/`), no varios paquetes Python.
+paquetes Python adicionales.
 
 ## Consecuencias
 
@@ -66,7 +66,7 @@ sirve el resultado. Es decir: **monorepo con dos apps** (`src/penfold` y
 
 ## Cumplimiento
 
-- No crear nuevos `pyproject.toml` fuera de la raíz (excepto el de `web/`).
+- No crear nuevos `pyproject.toml` fuera de la raíz.
 - Las dependencias nuevas se añaden a la raíz; las de desarrollo al extra
   `dev`.
 - Este ADR se revisaría si aparece un consumidor externo real de alguna capa.

@@ -12,17 +12,17 @@ seguridad y release). Los hitos sin marcar **no** deben considerarse terminados.
 - [x] Contrato HTTP versionado en
       [docs/development/API_CONTRACT.md](docs/development/API_CONTRACT.md).
 - [x] Estructura `src/penfold/{cli,server,execution,workflows,agents,runtimes,config,integrations}`
-      y `web/`.
+
 - [x] Documentación base de producto y arquitectura.
-- [ ] CI mínima: `ruff`, `pytest`, `vitest`, build de `web/`.
+- [ ] CI mínima: `ruff`, `pytest`.
 
 ## Fase 1 — Configuración, init y doctor (HECHA)
 
 - [x] `penfold init`: crea `.orchestrator/` con `config.yaml`, `agents/`,
       `workflows/`, `state/`, `runs/`, `artifacts/` y SQLite inicializado.
 - [x] Carga y validación de `config.yaml` con Pydantic v2.
-- [x] `penfold doctor`: comprueba Python, dependencias, Git, Node, pnpm, puerto
-      y proyecto inicializado.
+- [x] `penfold doctor`: comprueba Python, dependencias, Git, puerto y proyecto
+      inicializado.
 - [x] Token local persistido en `.orchestrator/state/server.token` (0600).
 - [x] `.gitignore` para `.orchestrator/state`, `runs` y `artifacts`.
 
@@ -67,28 +67,25 @@ seguridad y release). Los hitos sin marcar **no** deben considerarse terminados.
 - [x] SSE con replay por `after=<seq>` y heartbeat de 15 s.
 - [x] Arranque con runs `running` → `paused` y recuperación desde checkpoints.
 
-## Fase 6 — Editor visual (HECHA)
+## Fase 6 — Interfaz de terminal (HECHA; editor web retirado)
 
-- [x] React 19 + TypeScript + Vite + `@xyflow/react` + zustand + lucide-react.
-- [x] Crear/editar workflows con nodos y conexiones; inspector contextual.
-- [x] Guardado **round-trip** a YAML (la UI edita el archivo, no una fuente
-      privada).
-- [x] Panel de ejecución con estados y eventos SSE; aprobación desde la UI.
-- [x] Token en `localStorage` (también se consume el `?token=` de `penfold start`).
-- [x] `pnpm build` servido por el backend.
+- [x] Dashboard Rich (`penfold tui`): workflows, agentes e historial de runs.
+- [x] Ejecución de workflows con entradas, estados de nodos y eventos en vivo.
+- [x] Aprobación humana desde la terminal (`approve`/`reject`/`modify`/`cancel`).
+- [x] Cancelación y reanudación desde checkpoints.
+- [x] El antiguo editor visual React fue eliminado; la definición se edita en YAML.
 
 ## Fase 7 — Demo, endurecimiento y release 0.1 (EN CURSO)
 
 - [x] Ejemplos `examples/simple`, `examples/feature-development` y
       `examples/approval-demo`.
-- [x] Demo completa de la interfaz con Playwright (crear nodos, conectar,
-      configurar, guardar, ejecutar, ver estados, recargar y recuperar).
-- [x] Tests de integración (`pytest`, `httpx`, `pytest-asyncio`) y `vitest`
-      (33 tests backend + 14 frontend + 2 E2E).
+- [x] Demo de extremo a extremo por terminal (ejecutar, ver estados, aprobar y
+      recuperar el historial desde SQLite).
+- [x] Tests de integración (`pytest`, `httpx`, `pytest-asyncio`) y de la TUI.
 - [ ] Política de retención y purga de runs/artefactos.
 - [ ] Revisión de seguridad final según [SECURITY.md](SECURITY.md) y release
       0.1.
-- [ ] CI con `ruff`, `pytest`, `vitest` y build de `web/`.
+- [ ] CI con `ruff` y `pytest`.
 
 ## Fuera del roadmap de 0.1
 

@@ -2,16 +2,15 @@
 
 ## Visión general
 
-Penfold separa estrictamente **la definición visual del flujo** de **su
-ejecución**. El usuario edita un grafo en el navegador; Penfold persiste ese
-grafo como YAML en el repositorio; el motor interpreta el YAML, no la posición
-de los nodos en pantalla.
+Penfold separa estrictamente **la definición del flujo** de **su ejecución**.
+El grafo se edita como YAML en el repositorio; el motor interpreta el YAML, no
+la posición de los nodos. No hay interfaz web: la interacción es por TUI/CLI.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │ CAPA 1 — CLI (Typer + Rich)                                          │
-│   penfold init | doctor | start                                      │
-│   Arranca el servidor, imprime URL + token.                          │
+│   penfold init | doctor | tui | start                                │
+│   Inicializa, diagnostica, abre la TUI o arranca la API.             │
 └───────────────────────────────┬──────────────────────────────────────┘
                                 │ arranque local
 ┌───────────────────────────────▼──────────────────────────────────────┐
@@ -49,8 +48,8 @@ de los nodos en pantalla.
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-Módulos bajo `src/penfold/`: `models/`, `services/`, `views/`, `cli/`, `config/`,
-`integrations/`, `utils.py` (ver [ADR-0001](architecture/adr/0001-single-python-package.md)
+Módulos bajo `src/penfold/`: `models/`, `services/`, `views/`, `tui/`, `cli/`,
+`config/`, `integrations/`, `utils.py` (ver [ADR-0001](architecture/adr/0001-single-python-package.md)
 y [ADR-0006](architecture/adr/0006-mvc-layering.md)).
 
 ## Patrón MVC (capas Model / Service / View)
@@ -63,28 +62,27 @@ Desde 0.1 el backend sigue un **MVC estricto** ([ADR-0006](architecture/adr/0006
 | **Service** | `src/penfold/services/` | Motor (`engine`), ciclo de vida (`manager`), validación, repositorio, stores, plantillas, runtimes y utilidades de dominio. | **Toda la lógica de negocio vive aquí.** No abre endpoints. |
 | **View** | `src/penfold/views/` | Endpoints FastAPI (`app.py`), SSE y middleware de token (`auth.py`). | **Solo transporte.** Delega en services y serializa models. |
 
-La CLI (`src/penfold/cli/`) es un **adaptador de entrada** equivalente a la
-view: llama a los mismos services, no contiene lógica de negocio. Las
-utilidades puras compartidas (p. ej. `utcnow`) viven en `utils.py` para que
+La TUI (`src/penfold/tui/`) y la CLI (`src/penfold/cli/`) son **adaptadores de
+entrada** equivalentes a la view: llaman a los mismos services, no contienen
+lógica de negocio. Las utilidades puras compartidas (p. ej. `utcnow`) viven en `utils.py` para que
 ni models ni services dependan el uno del otro en dirección inversa.
 
-Dependencias permitidas: `views/ → services/ → models/ → utils.py`. La
-dirección contraria está prohibida.
+Dependencias permitidas: `views/`, `tui/` y `cli/` → `services/` → `models/` →
+`utils.py`. La dirección contraria está prohibida.
 
-## Separación definición visual / ejecución
+## Separación definición / ejecución
 
-| Definición visual (UI / YAML) | Ejecución (motor) |
+| Definición (YAML) | Ejecución (motor) |
 |---|---|
-| `nodes[].position: {x, y}` — solo dibujo | Se ignora por completo. |
+| `nodes[].position: {x, y}` — solo presentación | Se ignora por completo. |
 | `nodes[].id`, `edges[].source/target/source_handle` | Grafo y orden de ejecución. |
 | `config.inputs` con `$inputs` / `$nodes` | Resolución declarativa de datos. |
 | `edges[].config.max_iterations` | Límite de bucle; además hay límite global. |
 | `config.expression` de `condition` | Se evalúa con operadores permitidos. |
 | `outputs.schema` (JSON Schema) | Validación de la salida del agente. |
 
-Esto permite reordenar nodos en pantalla sin alterar la ejecución, y editar el
-YAML a mano sin romper el editor. La UI es un **editor round-trip**: carga el
-YAML, lo muestra como grafo y vuelve a serializarlo al guardar.
+El YAML es la única fuente de la verdad: se edita a mano y el motor lo interpreta.
+`position` no afecta a la ejecución.
 
 ## Eventos SSE
 
@@ -98,7 +96,7 @@ YAML, lo muestra como grafo y vuelve a serializarlo al guardar.
 - Se envía un comentario `: keep-alive` cada 15 s.
 - Los eventos también se pueden consultar con
   `GET /api/runs/{id}/events?after=`, útil para depuración y para reconstruir
-  el estado de la UI sin SSE.
+  el estado de un run sin SSE.
 
 ## Decisiones de diseño
 
@@ -110,7 +108,6 @@ YAML, lo muestra como grafo y vuelve a serializarlo al guardar.
 | YAML versionado como fuente de la verdad | Legible, revisable en Git, sin base de datos propietaria para la definición | [ADR-0003](architecture/adr/0003-yaml-workflow-format.md) |
 | SQLite local | Cero operaciones, reanudación y auditoría en la misma máquina | [ADR-0004](architecture/adr/0004-sqlite-local-persistence.md) |
 | Token local + localhost | Seguridad mínima suficiente para un servicio de usuario único | [ADR-0005](architecture/adr/0005-local-token-auth.md) |
-| Una sola copia versionada del build de la UI | Evita copias desincronizadas; el wheel se genera desde `apps/server/static` | [ADR-0007](architecture/adr/0007-single-static-build.md) |
 | Dominio separado del transporte HTTP | Las mismas entidades se usan en CLI, motor y API | [API_CONTRACT.md](development/API_CONTRACT.md) |
 | Sin shell en comandos | Evita inyección; `shlex.split` y lista de argumentos | [SECURITY.md](../SECURITY.md) |
 
@@ -172,10 +169,12 @@ Para evitar que un agente modifique el árbol de trabajo del usuario, se estudia
 que cada run use un **git worktree** temporal: el agente trabaja en una copia
 aislada, los cambios se revisan en el nodo `approval` y solo se integran si se
 aprueban. Esto no implementa un sandbox de seguridad, pero reduce el riesgo de
-modificar archivos no deseados. Existe un módulo auxiliar local
-(`penfold.integrations.git`) con operaciones Git no destructivas, pero **no está
-conectado al motor en el MVP 0.1**; requiere decisiones adicionales sobre
-limpieza, conflictos y artefactos (registrar un ADR nuevo).
+modificar archivos no deseados. Existe un service local
+(`penfold.services.git.GitService`) con operaciones Git no destructivas, su
+modelo de datos en `penfold.models.git.RepoInfo` y una vista de solo lectura en
+`penfold git`, pero **no está conectado al motor en el MVP 0.1**; requiere
+decisiones adicionales sobre limpieza, conflictos y artefactos (registrar un ADR
+nuevo).
 
 ## Más información
 

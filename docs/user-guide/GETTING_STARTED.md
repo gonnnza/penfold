@@ -8,8 +8,6 @@
 
 - Python 3.11+
 - [uv](https://docs.astral.sh/uv/)
-- Node 20+
-- [pnpm](https://pnpm.io/)
 
 Penfold es local-first: no necesitas cuenta, conexión a Internet durante el uso
 ni Docker. El servidor solo escucha en `127.0.0.1:8765`.
@@ -21,11 +19,6 @@ Desde la raíz del repositorio de Penfold:
 ```bash
 uv sync --extra dev
 uv run penfold --help
-
-cd web
-pnpm install
-pnpm build
-cd ..
 ```
 
 Después de esto, el binario `penfold` está disponible con `uv run penfold ...`.
@@ -58,60 +51,72 @@ Si vas a versionar tu proyecto, asegúrate de ignorar
 `.orchestrator/state/`, `.orchestrator/runs/` y `.orchestrator/artifacts/`.
 Sí se versionan `config.yaml`, `agents/` y `workflows/`.
 
-## 4. Arrancar el servidor
+## 4. Abrir la interfaz de terminal
 
 ```bash
-uv run penfold start
+uv run penfold tui
 ```
 
-La terminal muestra algo parecido a:
+La TUI lista workflows y agentes, lanza ejecuciones y muestra los estados de
+los nodos y los eventos en vivo. Habla directamente con los services: no
+necesita servidor HTTP ni token.
 
-```
-Penfold 0.1.0 — http://127.0.0.1:8765
-Token local: <token>
-```
-
-Abre la URL en el navegador. La UI guarda el token en `localStorage`, de modo
-que no tendrás que pegarlo de nuevo. El token también queda en
-`.orchestrator/state/server.token` (permisos `0600`) y se reutiliza en futuros
-arranques. Todas las peticiones usan la cabecera `X-Penfold-Token`; SSE usa
-`?token=` porque `EventSource` no puede fijar cabeceras.
-
-Comprobación rápida desde otra terminal:
-
-```bash
-curl http://127.0.0.1:8765/api/health
-# {"status":"ok","version":"0.1.0"}
-```
+Si prefieres la API, `uv run penfold start` arranca el servidor en
+`127.0.0.1:8765` e imprime el token (también guardado en
+`.orchestrator/state/server.token` con permisos `0600`). Las peticiones usan
+`X-Penfold-Token` y SSE usa `?token=`. Comprueba el servicio con
+`curl http://127.0.0.1:8765/api/health`.
 
 ## 5. Crear tu primer workflow (Input + Agent + Output)
 
-1. En la UI, pulsa **Nuevo workflow** y asígnale un id, por ejemplo `hello`.
-2. Arrastra tres nodos al lienzo: **Input**, **Agent** y **Output**.
-3. Conecta `Input → Agent → Output` arrastrando desde los puntos de conexión.
-4. Configura cada nodo en el panel lateral:
-   - **Input**: declara una entrada `request` de tipo `string`, obligatoria.
-   - **Agent**: selecciona el agente `product-analyst` y mapea
-     `request: $inputs.request`.
-   - **Output**: en `config.inputs` mapea, por ejemplo,
-     `summary: $nodes.analyst.output.summary` y elige `format: json`.
-5. Pulsa **Guardar**.
+Crea `.orchestrator/workflows/hello.yaml` con un nodo `input`, un `agent` y un
+`output`, conectados por aristas:
 
-Se habrá creado `.orchestrator/workflows/hello.yaml`. Ábrelo con un editor de
-texto: verás `schema_version: 1`, tus nodos (con `position`), las aristas y los
-mapeos. Puedes editarlo a mano y recargar la UI: el grafo se recupera igual.
-El motor ignora `position`, así que mover nodos no cambia la ejecución.
+```yaml
+schema_version: 1
+metadata:
+  id: hello
+  name: Hola Penfold
+inputs:
+  - id: request
+    type: string
+    required: true
+nodes:
+  - id: start
+    type: input
+    config: {}
+  - id: analyst
+    type: agent
+    agent: product-analyst
+    config:
+      inputs:
+        request: $inputs.request
+  - id: end
+    type: output
+    config:
+      format: json
+      inputs:
+        summary: $nodes.analyst.output.summary
+edges:
+  - { id: e1, source: start, target: analyst }
+  - { id: e2, source: analyst, target: end }
+```
+
+El campo `position` es opcional y el motor lo ignora. Valida el archivo con
+`uv run penfold workflow validate hello`.
 
 ## 6. Ejecutar con MockRuntime
 
-1. Selecciona el workflow `hello` en la lista.
-2. Introduce un valor para `request`, por ejemplo
-   «Añade autenticación JWT».
-3. Pulsa **Ejecutar**.
+En la TUI elige `[2] Ejecutar`, escribe `hello` e introduce un valor para
+`request`, por ejemplo «Añade autenticación JWT». Alternativamente:
 
-`MockRuntime` devuelve una salida determinista declarada en `mock.output` del
-agente. Verás los nodos cambiar de `pending` a `ready`, `running` y
-`succeeded`, y los eventos llegando por SSE. Los estados se guardan en SQLite.
+```bash
+uv run penfold run hello -i "request=Añade autenticación JWT" --watch
+```
+
+`MockRuntime` devuelve una salida determinista declarada en `mock.output`.
+Verás los nodos pasar de `pending` a `ready`, `running` y `succeeded`, con sus
+eventos en vivo. Los estados se guardan en SQLite.
 
 También puedes crear el run por API:
 
@@ -130,18 +135,14 @@ curl -N "http://127.0.0.1:8765/api/runs/<id>/stream?token=<token>"
 
 ## 7. Ver estados, aprobar y recuperar
 
-- El panel de ejecución muestra el estado de cada nodo y el historial de
-  eventos. Si la conexión SSE se corta, la UI reconecta con `after=<seq>` y
-  recupera los eventos perdidos.
-- Si el workflow incluye un nodo `approval`, el run pasa a
-  `waiting_approval`. Revisa el contenido y elige **Aprobar**, **Rechazar** o
-  **Modificar**. El run continúa o falla según la decisión.
-- Puedes cancelar un run en curso; el motor se detiene entre nodos y marca el
-  nodo en curso como `cancelled`.
-- Cierra la UI y vuelve a abrirla: el historial de runs y su detalle se leen
+- La TUI muestra el estado de cada nodo y el historial de eventos.
+- Si el workflow incluye un nodo `approval`, el run pasa a `waiting_approval`:
+  elige `approve`, `reject`, `modify` o `cancel` desde la propia TUI.
+- Puedes cancelar un run en curso; el motor se detiene entre nodos.
+- Cierra la TUI y vuelve a abrirla: el historial de runs y su detalle se leen
   desde `.orchestrator/state/penfold.db`. Si el servidor se reinició mientras
-  un run estaba `running`, este aparece como `paused`; usa **Reanudar** para
-  continuar desde el checkpoint sin repetir nodos exitosos.
+  un run estaba `running`, aparece como `paused`; usa `penfold resume <id>` o
+  la opción `[3] Reanudar` de la TUI.
 
 ## 8. Siguiente paso
 

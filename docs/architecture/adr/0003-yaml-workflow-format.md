@@ -6,12 +6,12 @@
 
 ## Contexto
 
-El workflow es la unidad de trabajo de Penfold: se crea en un editor visual, se
+El workflow es la unidad de trabajo de Penfold: se edita como YAML, se
 guarda, se revisa en Git y se ejecuta. Necesitamos un formato que sea legible
 por humanos y por el motor, que soporte la edición visual **round-trip** y que
 no convierta el YAML en un lenguaje de programación encubierto.
 
-Además, la UI (@xyflow/react) necesita coordenadas `x/y`, pero esas coordenadas
+Además, el formato admite coordenadas `x/y` opcionales, pero esas coordenadas
 no tienen significado para la ejecución.
 
 ## Decisión

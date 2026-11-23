@@ -10,11 +10,6 @@ pequeña, discutida y con tests.
 uv sync --extra dev
 uv run penfold --help
 
-# Frontend (Node 20+, pnpm)
-cd web
-pnpm install
-pnpm build
-cd ..
 ```
 
 No hace falta arrancar nada para desarrollar: los tests unitarios son
@@ -53,8 +48,6 @@ uv run ruff format .        # si se habilita el formatter en el proyecto
 uv run pytest
 
 # Frontend
-cd web && pnpm test       # Vitest
-cd web && pnpm build      # comprueba que la UI compila
 ```
 
 - Todo tipo de nodo nuevo necesita tests de: resolución de entradas,

@@ -27,14 +27,14 @@ cabeceras HTTP**; solo puede enviar parámetros en la query string.
    acepta el token en la query porque `EventSource` no puede enviar la
    cabecera. Es la única excepción y no se usa en otros endpoints.
 
-4. **Cliente**: la UI guarda el token en `localStorage` y lo adjunta a las
-   peticiones. En el servidor se conserva en
-   `.orchestrator/state/server.token` con permisos `0600` para reutilizarlo
-   entre arranques; no se escribe en YAML, SQLite, logs ni eventos.
+4. **Cliente**: no hay navegador; quien consuma la API (scripts, `curl`) envía
+   el token en la cabecera `X-Penfold-Token`. La TUI y la CLI no usan HTTP.
+   El token se conserva en `.orchestrator/state/server.token` con permisos
+   `0600` para reutilizarlo entre arranques; no se escribe en YAML, SQLite,
+   logs ni eventos.
 
 5. **Sin usuarios**: no hay cuentas, roles ni sesiones. El token protege el
-   servicio, pero cualquiera con acceso a la terminal o al navegador tiene
-   acceso completo.
+   servicio, pero cualquiera con acceso a la terminal tiene acceso completo.
 
 Contrato detallado: [API_CONTRACT.md](../../development/API_CONTRACT.md).
 
@@ -42,20 +42,16 @@ Contrato detallado: [API_CONTRACT.md](../../development/API_CONTRACT.md).
 
 ### Positivas
 
-- Configuración mínima: no hay login; basta abrir la URL con el token ya
-  guardado por la UI.
+- Configuración mínima: no hay login; basta enviar el token impreso en la
+  terminal al arrancar.
 - Mitiga peticiones cross-site accidentales a localhost: un sitio externo no
   conoce el token y no puede fijar la cabecera.
 - `EventSource` funciona sin un polyfill que añada cabeceras.
 
 ### Negativas
 
-- El token en la query puede acabar en logs de proxy o en el historial del
-  navegador si se copia la URL. Se mitiga no registrando query strings en logs
-  y no mostrando el token en la UI.
-- `localStorage` es accesible desde JavaScript del mismo origen: cualquier
-  script inyectado en la UI podría leerlo. Por eso importa sanitizar contenido
-  mostrado.
+- El token en la query puede acabar en logs de proxy o en el historial si se
+  copia la URL. Se mitiga no registrando query strings en logs.
 - No es autenticación multicliente ni sustituye a TLS: el tráfico va por loopback.
 
 ## Alternativas consideradas
@@ -73,7 +69,6 @@ Contrato detallado: [API_CONTRACT.md](../../development/API_CONTRACT.md).
 - Redacción de secretos en logs y eventos ([SECURITY.md](../../../SECURITY.md)).
 - El token **no** se regenera en cada arranque: se lee de
   `.orchestrator/state/server.token` y solo se genera uno nuevo si el archivo
-  no existe. Si se sospecha exposición, borrar ese archivo y el valor guardado
-  en `localStorage`, y reiniciar.
+  no existe. Si se sospecha exposición, borrar ese archivo y reiniciar.
 - `/api/health` no lleva token para permitir comprobaciones simples, pero no
   expone información sensible: solo `{status, version}`.

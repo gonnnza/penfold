@@ -13,14 +13,15 @@ imprescindible en la máquina del desarrollador.
   la cabecera `X-Penfold-Token`. SSE no puede fijar cabeceras con `EventSource`,
   por lo que acepta `?token=<token>` como alternativa
   ([ADR-0005](docs/architecture/adr/0005-local-token-auth.md)).
-- El token se **muestra en la terminal** al arrancar `penfold start`. La UI lo
-  guarda en `localStorage` del navegador. Quien tenga acceso al navegador o a la
-  terminal puede usar el servicio: no hay distinción de usuarios.
+- El token se **muestra en la terminal** al arrancar `penfold start` y se guarda
+  en `.orchestrator/state/server.token` (`0600`). La TUI y la CLI no necesitan
+  token: hablan directamente con los services. Quien tenga acceso a la terminal
+  puede usar el servicio: no hay distinción de usuarios.
 
 > No pegues el token en scripts compartidos ni en terminals remotas. El token
 > se guarda en `.orchestrator/state/server.token` con permisos `0600` y se
-> reutiliza entre arranques. Para rotarlo, elimina ese archivo (y el valor en
-> `localStorage`) antes de volver a ejecutar `penfold start`.
+> reutiliza entre arranques. Para rotarlo, elimina ese archivo antes de volver a
+> ejecutar `penfold start`.
 
 ## Secretos
 

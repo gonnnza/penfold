@@ -35,12 +35,6 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/penfold"]
 
-# El build del frontend vive una sola vez en el repo (apps/server/static) y se
-# copia a penfold/static al construir el wheel. No hay una copia versionada
-# dentro del paquete Python (ver ADR-0007).
-[tool.hatch.build.targets.wheel.force-include]
-"apps/server/static" = "penfold/static"
-
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"

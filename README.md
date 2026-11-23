@@ -12,9 +12,9 @@
 
 **Orquestador visual local-first para equipos de agentes de IA que desarrollan software.**
 
-Define flujos repetibles como grafos YAML versionables, edítalos en una interfaz
-visual y ejecútalos localmente con progreso en tiempo real, revisión humana y
-reanudación desde checkpoints.
+Define flujos repetibles como grafos YAML versionables y ejecútalos localmente
+con progreso en tiempo real, revisión humana y reanudación desde checkpoints.
+La interfaz es una TUI de terminal: no hay frontend web ni servidor de UI.
 
 [Instalación](#instalación) · [Inicio rápido](#inicio-rápido) ·
 [Ejemplo](#ejemplo-mínimo) · [Documentación](#documentación)
@@ -49,8 +49,9 @@ reanudable. Es, en resumen, **Git para la lógica de tus agentes**.
 - 🧠 **Neutralidad de proveedor** — `MockRuntime` determinista o
   `CommandRuntime` con el comando y los argumentos que tú declaras. Nada de
   adivinar flags de CLIs de IA.
-- 🖱️ **Editor visual que escribe YAML** — round-trip real: lo que editas en la
-  UI se guarda en el archivo. La posición de los nodos es solo presentación.
+- 🧩 **YAML como fuente de la verdad** — la definición vive en
+  `.orchestrator/workflows/*.yaml`; la posición de los nodos es solo
+  presentación.
 - 📡 **Ejecución observable** — SSE con replay por `after=<seq>` y heartbeat.
 - ⏸️ **Reanudable** — los runs interrumpidos pasan a `paused` y continúan sin
   repetir nodos ya exitosos.
@@ -68,17 +69,14 @@ reanudable. Es, en resumen, **Git para la lógica de tus agentes**.
 ## Cómo encaja
 
 ```
-   Terminal                        Navegador (React 19)
-  `penfold`  ── start ──▶   http://127.0.0.1:8765  (UI servida en local)
-     │                             │  X-Penfold-Token / ?token=
-     │                             ▼
-     ├────────▶  FastAPI (views/)  ◀──── SSE /api/runs/{id}/stream
-     │                             │
-  `penfold tui`                    ▼
-  (dashboard Rich) ──▶ services/ ◀── ExecutionEngine
+  `penfold tui`  ─┐
+                  ├──▶  services/  ◀──  `penfold run ...`
+  FastAPI (views/) ┘          │
+  (API + SSE, sin UI)         ▼
+                     ExecutionEngine
                              │
-                  input | agent | command | condition
-                      | approval | output
+              input | agent | command | condition
+                  | approval | output
                              │
                   MockRuntime | CommandRuntime
                              │
@@ -87,26 +85,17 @@ reanudable. Es, en resumen, **Git para la lógica de tus agentes**.
 
 La lógica vive en `services/`, los contratos de datos en `models/` y el
 transporte HTTP en `views/` ([ADR-0006](docs/architecture/adr/0006-mvc-layering.md)).
-El CLI y la TUI son adaptadores de entrada que llaman a los mismos services.
-
-> 💡 **¿Sin navegador?** `penfold tui` abre un dashboard interactivo de terminal
-> (workflows, agentes, runs y eventos en vivo). Habla directamente con los
-> services: no necesita servidor HTTP ni token. La UI web sigue siendo la
-> interfaz principal.
+La TUI, la CLI y la API son adaptadores de entrada que llaman a los mismos
+services.
 
 ## Instalación
 
-Requisitos: **Python 3.11+** y [uv](https://docs.astral.sh/uv/). Para la UI web
-también hacen falta **Node 20+** y [pnpm](https://pnpm.io/). Para la TUI solo
-hace falta Python.
+Requisitos: **Python 3.11+** y [uv](https://docs.astral.sh/uv/). No se necesita
+Node ni pnpm.
 
 ```bash
-# Backend, CLI y TUI
 uv sync --extra dev
 uv run penfold --help
-
-# Frontend (la UI la sirve el servidor local)
-cd web && pnpm install && pnpm build && cd ..
 ```
 
 ## Inicio rápido
@@ -117,12 +106,11 @@ uv run penfold doctor    # comprueba entorno, dependencias y puerto
 uv run penfold start     # arranca en 127.0.0.1:8765 e imprime URL + token
 ```
 
-Abre la URL que aparece en la terminal. La UI guarda el token en
-`localStorage`; el token también se conserva con permisos `0600` en
+El token se conserva con permisos `0600` en
 `.orchestrator/state/server.token`. Comprueba el servicio con
 `GET /api/health`.
 
-Prefieres la terminal:
+Para usar la interfaz de terminal:
 
 ```bash
 uv run penfold tui
@@ -136,7 +124,7 @@ Guía completa: [Getting started](docs/user-guide/GETTING_STARTED.md).
 |---|---|
 | `penfold init` | Inicializa `.orchestrator/` en el proyecto actual. |
 | `penfold doctor` | Diagnostica instalación, configuración y estado local. |
-| `penfold start` | Arranca el servidor local y abre la UI web. |
+| `penfold start` | Arranca el servidor local (API y SSE; sin interfaz web). |
 | `penfold tui` | Abre el dashboard interactivo de terminal. |
 | `penfold run <workflow> -i clave=valor --watch` | Ejecuta un workflow desde la CLI. |
 | `penfold runs` · `inspect <id>` · `logs <id> -f` | Lista y examina ejecuciones y eventos. |
@@ -263,10 +251,9 @@ Solo se versionan `config.yaml`, `agents/` y `workflows/`. Detalles:
 
 ## Estado del MVP
 
-**Fases 0–6 implementadas y verificadas** (fundación, config, validación,
-motor, runtimes, servidor/SSE y editor visual). **Fase 7 en curso**: ejemplos,
-demo y tests ya funcionan; quedan CI, retención y revisión de seguridad final
-([ROADMAP.md](ROADMAP.md)).
+**Fases 0–6** (fundación, config, validación, motor, runtimes, servidor/SSE y
+TUI) más la **Fase 7 en curso**: ejemplos, tests y demo por terminal funcionan;
+quedan CI, retención y revisión de seguridad final ([ROADMAP.md](ROADMAP.md)).
 
 Todavía **no** incluye: LangGraph, Docker o contenedores, nube/multiusuario,
 integraciones concretas con CLIs de IA, worktrees aislados por run ni runtimes
@@ -278,13 +265,7 @@ remotos más allá de `mock` y `command`.
 uv run pytest                       # backend
 uv run ruff check .                 # lint (E, F, I, UP; línea 100)
 uv run ruff format --check .        # formato
-cd web && pnpm test && pnpm build   # frontend
 ```
-
-El build de la UI se guarda una sola vez en el repo,
-`apps/server/static/`; el wheel genera `penfold/static` desde ahí al
-construirse ([ADR-0007](docs/architecture/adr/0007-single-static-build.md)).
-Si cambias la UI, recompila y sincroniza esa carpeta.
 
 ## Documentación
 

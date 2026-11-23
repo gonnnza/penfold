@@ -6,8 +6,7 @@ import asyncio
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 
 from penfold import __version__
 from penfold.config.paths import ProjectPaths
@@ -223,32 +222,12 @@ def create_app(paths: ProjectPaths, config: ProjectConfig, *, token: str) -> Fas
             raise NotFoundError("Artefacto no encontrado.")
         return FileResponse(target)
 
-    static_dir = paths.static_dir
-    if (static_dir / "index.html").is_file():
-
-        @app.get("/")
-        async def index() -> FileResponse:
-            return FileResponse(static_dir / "index.html")
-
-        if (static_dir / "assets").is_dir():
-            app.mount("/assets", StaticFiles(directory=static_dir / "assets"), name="assets")
-
-        @app.get("/{full_path:path}")
-        async def spa(full_path: str) -> FileResponse:
-            candidate = (static_dir / full_path).resolve()
-            if candidate.is_file() and candidate.is_relative_to(static_dir.resolve()):
-                return FileResponse(candidate)
-            return FileResponse(static_dir / "index.html")
-    else:
-
-        @app.get("/")
-        async def not_built() -> HTMLResponse:
-            return HTMLResponse(
-                "<h1>Penfold</h1>"
-                "<p>El servidor está activo, pero el frontend aún no está compilado.</p>"
-                "<p>Compílalo con <code>cd web &amp;&amp; pnpm build</code></p>"
-                "<p>y reinicia el servidor.</p>"
-                "<p><a href='/api/health'>/api/health</a></p>"
-            )
+    @app.get("/")
+    async def root() -> dict[str, str]:
+        return {
+            "name": "Penfold",
+            "version": __version__,
+            "message": "Sin interfaz web: usa `penfold tui` o la CLI.",
+        }
 
     return app

@@ -7,7 +7,6 @@ versionarse (se crea un ``.gitignore`` propio).
 
 from __future__ import annotations
 
-import importlib.resources
 import os
 import stat
 from pathlib import Path
@@ -86,25 +85,6 @@ class ProjectPaths:
     @property
     def artifacts_dir(self) -> Path:
         return self.base / "artifacts"
-
-    @property
-    def static_dir(self) -> Path:
-        """Build del frontend: junto al paquete Python o en el monorepo."""
-        try:
-            bundled = Path(
-                importlib.resources.files("penfold").joinpath("static")  # type: ignore[arg-type]
-            )
-        except (ModuleNotFoundError, TypeError):  # pragma: no cover
-            bundled = Path(__file__).resolve().parent.parent / "static"
-        candidates = [
-            bundled,
-            self.root / "apps" / "server" / "static",
-            Path(__file__).resolve().parents[3] / "apps" / "server" / "static",
-        ]
-        for candidate in candidates:
-            if (candidate / "index.html").is_file():
-                return candidate
-        return candidates[0]
 
     def exists(self) -> bool:
         return self.config_file.is_file()

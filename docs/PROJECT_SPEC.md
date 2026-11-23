@@ -77,9 +77,9 @@ entregarán en `examples/feature-development` (ver
 
 ### Incluido
 
-- CLI `penfold` con `init`, `doctor` y `start`.
+- CLI `penfold` con `init`, `doctor`, `start` y dashboard TUI (`penfold tui`).
 - Servidor local FastAPI en `127.0.0.1:8765` con token mostrado en terminal y
-  guardado en `localStorage` por la UI.
+  guardado en `.orchestrator/state/server.token` (`0600`).
 - Persistencia en `.orchestrator/`: `config.yaml`, `agents/*.yaml`,
   `workflows/*.yaml`, `state/penfold.db`, `runs/`, `artifacts/`.
 - Seis tipos de nodo: `input`, `agent`, `command`, `condition`, `approval`,
@@ -93,8 +93,7 @@ entregarán en `examples/feature-development` (ver
 - Validación de grafos (ids únicos, referencias existentes, nodos
   desconectados, ciclos infinitos, esquemas).
 - Eventos SSE por run con reconexión mediante `after=<last event id>`.
-- Editor visual React 19 + `@xyflow/react` que **guarda el YAML**; el archivo
-  sigue siendo editable a mano.
+- YAML editable a mano; `position` es solo presentación.
 - SQLite con tablas `runs`, `node_states`, `events`, `approvals`.
 - Permisos declarativos por agente (`read_only`, `workspace_write`,
   `restricted`) y registro de auditoría en eventos.
@@ -119,23 +118,17 @@ La demo de MVP se considera correcta si, partiendo de un repositorio sin
 1. Ejecutar `penfold init` y obtener `.orchestrator/` con `config.yaml`,
    directorios `agents/`, `workflows/`, `state/`, `runs/`, `artifacts/` y el
    archivo `state/penfold.db` inicializado.
-2. Ejecutar `penfold start`, ver la URL y el token en la terminal, abrir la UI
-   y quedar autenticado al guardar el token en `localStorage`.
-3. Crear un workflow nuevo en el editor visual con nodos **Input + Agent +
-   Output** y conectarlo.
+2. Ejecutar `penfold start`, ver la URL y el token en la terminal y verificar
+   `GET /api/health`.
+3. Crear `.orchestrator/workflows/<id>.yaml` con nodos **Input + Agent +
+   Output**, `schema_version: 1`, conexiones y mapeos.
 4. Configurar el nodo Input (nombre y tipo), el nodo Agent (agente y mapeos de
-   entrada) y el nodo Output (mapeo de salida) desde la UI.
-5. Guardar: el archivo `.orchestrator/workflows/<id>.yaml` se crea/actualiza con
-   `schema_version: 1`, posiciones y conexiones; al recargar la UI se recupera
-   el mismo grafo.
-6. Ejecutar el workflow con `MockRuntime`, introduciendo un valor de entrada.
-7. Ver en la UI los estados de los nodos (`pending`, `ready`, `running`,
-   `succeeded`, …) y los eventos SSE a medida que avanza el run.
-8. Cerrar y reabrir la UI: el historial de runs y el detalle (`RunDetail`) se
+   entrada) y el nodo Output (mapeo de salida) en el YAML.
+5. Ejecutar el workflow con `MockRuntime` desde `penfold tui` o `penfold run -i`,
+   introduciendo un valor de entrada.
+6. Ver en la TUI los estados de los nodos y los eventos en vivo.
+7. Cerrar y reabrir la TUI: el historial de runs y el detalle (`RunDetail`) se
    recuperan desde SQLite, incluidos `NodeState` y eventos.
-
-> Nota: los criterios 3–8 describen el flujo objetivo de la demo. Su estado de
-> implementación se sigue en [ROADMAP.md](ROADMAP.md).
 
 ## Definiciones compartidas
 
