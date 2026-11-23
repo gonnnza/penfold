@@ -135,10 +135,10 @@ Para añadir uno:
 2. Usa `MockRuntime` con `mock.output` fijo para que la demo sea determinista.
 3. Define `outputs.schema` y `permissions.mode` apropiados a su responsabilidad.
 4. Añade el agente a `examples/` y su papel a
-   [PROJECT_SPEC.md](../../PROJECT_SPEC.md).
+   [PROJECT_SPEC.md](../PROJECT_SPEC.md).
 
 ## Referencias
 
 - [ADR-0002: ExecutionEngine](../architecture/adr/0002-execution-engine-protocol.md)
 - [ADR-0003: formato YAML](../architecture/adr/0003-yaml-workflow-format.md)
-- [CONTRIBUTING.md](../../CONTRIBUTING.md)
+- [CONTRIBUTING.md](../CONTRIBUTING.md)

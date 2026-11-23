@@ -63,7 +63,7 @@ start`, selecciona **Hola Penfold**, introduce un `request` y pulsa Ejecutar.
 
 ## `examples/feature-development` — caso JWT
 
-Es el caso de uso de referencia de [PROJECT_SPEC.md](../../PROJECT_SPEC.md):
+Es el caso de uso de referencia de [PROJECT_SPEC.md](../PROJECT_SPEC.md):
 «Añade autenticación JWT a la API, con refresh tokens y tests». Muestra un grafo
 con varias responsabilidades, un nodo `command`, una condición con ramas, un
 bucle con `max_iterations` y una aprobación humana.
@@ -162,10 +162,10 @@ El bucle de reintento (no mostrado arriba por brevedad) se añade con una arista
 ### Qué observar durante la demo
 
 1. Los nodos pasan por `pending`, `ready`, `running` y `succeeded`.
-2. El run se detiene en `waiting_approval`; la UI muestra
+2. El run se detiene en `waiting_approval`; la TUI muestra
    `RunDetail.approval` con título y datos.
 3. Al aprobar, el flujo continúa hasta `completed` con `outputs`.
-4. Los eventos llegan por SSE con `seq` creciente; al recargar la página se
+4. Los eventos llegan por SSE con `seq` creciente; al reiniciar la TUI se
    recuperan desde SQLite.
 5. `NodeState.runtime` muestra `mock:<agente>` y `simulated: true`.
 

@@ -71,6 +71,10 @@ penfold --project /electrolux tui
 └── artifacts/
 ```
 
+`agents/` queda vacío a propósito: `init` no instala agentes. Los workflows de
+ejemplo funcionan con nodos `command`. Para usar nodos `agent`, escribe tu YAML
+en `.orchestrator/agents/` (en `examples/agents/` del repo hay referencias).
+
 `doctor` verifica que el entorno está listo y que no haya otro proceso usando
 el puerto 8765.
 

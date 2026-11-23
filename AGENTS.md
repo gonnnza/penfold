@@ -131,6 +131,9 @@ expone la API REST y SSE.
 
 ## 7. Trampas conocidas
 
+- `penfold init` no crea agentes: los workflows de ejemplo usan nodos `command`
+  y funcionan sin `.orchestrator/agents/*.yaml`. No reintroduzcas plantillas de
+  agentes sin una decisión explícita; los tests usan sus propias fixtures.
 - No hay interfaz web: el servidor solo expone API + SSE. Para usar el proyecto
   de forma interactiva, `penfold tui` (o los comandos de la CLI).
 - `penfold start` imprime URL + token; el token se conserva en
@@ -163,3 +166,4 @@ expone la API REST y SSE.
 | 2026-11-23 | Atajo `penfold .`: inicializa la carpeta si hace falta y abre la TUI. 40 tests pasan. | — |
 | 2026-11-23 | Diagramas del workflow en terminal (`penfold workflow diagram`, opción `[5]` de la TUI). 43 tests pasan. | — |
 | 2026-11-23 | Editor de workflows por terminal (`WorkflowEditor`, comandos `workflow new/add-node/connect/set/...` y opción `[6]` de la TUI). 47 tests pasan. | — |
+| 2026-11-23 | Eliminados los agentes por defecto: `init` solo instala workflows, que ahora usan nodos `command`. Fixtures de tests con agentes mínimos. 47 tests pasan. | — |

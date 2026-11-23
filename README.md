@@ -129,10 +129,14 @@ O, si prefieres hacerlo paso a paso:
 
 ```bash
 cd /electrolux
-penfold init      # crea .orchestrator/ con config, agentes y workflows
+penfold init      # crea .orchestrator/ con config y workflows de ejemplo
 penfold doctor    # comprueba entorno, dependencias y puerto
 penfold tui       # abre el dashboard interactivo de terminal
 ```
+
+`init` **no instala agentes**: los workflows de ejemplo usan nodos `command` y
+funcionan sin ellos. Para usar nodos `agent`, crea tus YAML en
+`.orchestrator/agents/` (puedes tomar como referencia `examples/agents/`).
 
 Todos los comandos buscan `.orchestrator/` en el directorio actual y, si no
 está, en sus padres. También puedes apuntar explícitamente a otro proyecto
@@ -151,7 +155,7 @@ Si usas el checkout en vez de la instalación global, sustituye `penfold` por
 ## Inicio rápido (desde el checkout)
 
 ```bash
-uv run penfold init      # crea .orchestrator/ con config, agentes y workflows
+uv run penfold init      # crea .orchestrator/ con config y workflows de ejemplo
 uv run penfold doctor    # comprueba entorno, dependencias y puerto
 uv run penfold tui       # abre el dashboard interactivo de terminal
 ```

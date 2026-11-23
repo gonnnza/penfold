@@ -71,7 +71,7 @@ Condition: tests pasan?
 En el MVP estos agentes pueden usar `MockRuntime` (salidas deterministas, para
 la demo) o `CommandRuntime` (comando declarado explícitamente). Los ejemplos se
 entregarán en `examples/feature-development` (ver
-[docs/user-guide/EXAMPLES.md](docs/user-guide/EXAMPLES.md)).
+[user-guide/EXAMPLES.md](user-guide/EXAMPLES.md)).
 
 ## Alcance del MVP (0.1)
 
@@ -101,7 +101,7 @@ entregarán en `examples/feature-development` (ver
 ### Fuera de alcance
 
 - LangGraph u otro framework de grafos externo (hay un protocolo propio,
-  [ADR-0002](docs/architecture/adr/0002-execution-engine-protocol.md)).
+  [ADR-0002](architecture/adr/0002-execution-engine-protocol.md)).
 - Docker, contenedores o cualquier sandbox del sistema operativo.
 - Nube, multiusuario, cuentas, RBAC remoto o sincronización.
 - Integraciones concretas con productos de CLI de IA (ni adivinar sus flags).
@@ -133,7 +133,7 @@ La demo de MVP se considera correcta si, partiendo de un repositorio sin
 ## Definiciones compartidas
 
 Los nombres de entidades y campos de esta especificación coinciden con
-[docs/development/API_CONTRACT.md](docs/development/API_CONTRACT.md):
+[API_CONTRACT.md](development/API_CONTRACT.md):
 `WorkflowDefinition`, `AgentDefinition`, `RunDetail`, `NodeState`, `RunEvent`,
 `RunStatus`, `NodeStatus` y los tipos de nodo. Ante cualquier discrepancia,
 manda el contrato HTTP.

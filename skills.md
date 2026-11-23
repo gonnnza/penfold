@@ -396,6 +396,7 @@ con comandos `workflow new/add-node/connect/set`, validado y ejecutado.
 | 2026-11-23 | Añadida `usar-desde-cualquier-carpeta` (opción global `--project`). | — |
 | 2026-11-23 | `usar-desde-cualquier-carpeta` documenta el atajo `penfold .`. | — |
 | 2026-11-23 | Añadida `editar-workflow-terminal` para crear y modificar grafos sin UI web. | — |
+| 2026-11-23 | Eliminados los agentes por defecto; los workflows de ejemplo usan nodos `command` y los tests definen sus propios agentes. | — |
 
 > Si quieres convertir alguna de estas skills en una skill real de OpenCode,
 > muévela a `.opencode/skills/<nombre>/SKILL.md` con frontmatter `name` y
