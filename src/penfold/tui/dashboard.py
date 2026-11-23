@@ -29,6 +29,7 @@ from penfold.services.events import EventBus
 from penfold.services.manager import RunManager
 from penfold.services.repository import RunRepository
 from penfold.services.workflow_store import WorkflowStore
+from penfold.tui.diagram import build_diagram
 
 console = Console()
 
@@ -347,7 +348,8 @@ async def _session(paths: ProjectPaths) -> None:
                 f"{len(workflows.list())}  [dim]Agentes:[/dim] {len(agents.list())}"
             )
             choice = await ask(
-                "[1] Workflows  [2] Ejecutar  [3] Runs  [4] Agentes  [0] Salir", default="0"
+                "[1] Workflows  [2] Ejecutar  [3] Runs  [4] Agentes  [5] Diagrama  [0] Salir",
+                default="0",
             )
             if choice == "0":
                 return
@@ -362,6 +364,15 @@ async def _session(paths: ProjectPaths) -> None:
             elif choice == "4":
                 _header("Agentes")
                 console.print(render_agents_table(agents.list()))
+                await ask("Enter para continuar...", default="")
+            elif choice == "5":
+                _header("Diagrama")
+                workflow_id = await ask("ID del workflow:", default="")
+                if workflow_id:
+                    try:
+                        console.print(build_diagram(workflows.get(workflow_id)))
+                    except PenfoldError as exc:
+                        console.print(f"[red]Error:[/red] {exc}")
                 await ask("Enter para continuar...", default="")
     finally:
         for task in list(manager.tasks.values()):

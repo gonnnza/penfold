@@ -30,6 +30,7 @@ from penfold.services.validator import validate_workflow
 from penfold.services.workflow_store import WorkflowStore
 from penfold.services.workflow_templates import install_default_workflows
 from penfold.tui import run_dashboard
+from penfold.tui.diagram import build_diagram
 from penfold.views.auth import new_token
 
 app = typer.Typer(
@@ -429,6 +430,17 @@ def workflow_list() -> None:
             item.metadata.id, item.metadata.name, str(len(item.nodes)), item.metadata.description
         )
     console.print(table)
+
+
+@workflow_app.command("diagram")
+def workflow_diagram(workflow_id: str = typer.Argument(..., help="ID del workflow.")) -> None:
+    """Dibujar el grafo del workflow en la terminal."""
+    _, _, _, workflows, *_ = _components()
+    try:
+        definition = workflows.get(workflow_id)
+    except PenfoldError as exc:
+        _fail(str(exc))
+    console.print(build_diagram(definition))
 
 
 @workflow_app.command("validate")
