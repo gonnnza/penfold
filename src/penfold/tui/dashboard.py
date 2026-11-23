@@ -192,6 +192,12 @@ async def ask(
     )
 
 
+def _clear() -> None:
+    """Limpia la pantalla antes de dibujar una vista nueva (solo en TTY)."""
+    if console.is_terminal:
+        console.clear()
+
+
 def _header(title: str) -> None:
     console.rule(f"[bold cyan]Penfold {__version__}[/bold cyan] · {title}")
 
@@ -208,6 +214,7 @@ async def _monitor_run(
     approval_asked = False
 
     while True:
+        _clear()
         with Live(console=console, refresh_per_second=4, screen=False) as live:
             while True:
                 for event in repository.list_events(run_id, after=last_seq):
@@ -225,6 +232,7 @@ async def _monitor_run(
 
         if not approval_asked:
             approval_asked = True
+            _clear()
             run = manager.get(run_id)
             approval = run.approval
             console.print(
@@ -260,9 +268,12 @@ async def _monitor_run(
 
 
 async def _launch(manager: RunManager, repository: RunRepository, workflows: WorkflowStore) -> None:
+    _clear()
     definitions = workflows.list()
     if not definitions:
-        console.print("[yellow]No hay workflows. Usa `penfold init` o crea uno en la UI.[/yellow]")
+        console.print(
+            "[yellow]No hay workflows. Usa `penfold workflow new <id>` para crear uno.[/yellow]"
+        )
         return
     _header("Ejecutar workflow")
     console.print(render_workflows_table(definitions))
@@ -289,6 +300,7 @@ async def _launch(manager: RunManager, repository: RunRepository, workflows: Wor
         return
 
     final = await _monitor_run(manager, repository, run.id, workflow)
+    _clear()
     console.print(
         Panel(
             f"Estado: {final.status.value}\nSalidas: "
@@ -303,6 +315,7 @@ async def _runs_menu(
     manager: RunManager, repository: RunRepository, workflows: WorkflowStore
 ) -> None:
     while True:
+        _clear()
         _header("Historial de ejecuciones")
         runs = manager.list(limit=20)
         console.print(render_runs_table(runs))
@@ -338,6 +351,7 @@ async def _edit_menu(workflows: WorkflowStore) -> None:
     node_types = ["input", "agent", "command", "condition", "approval", "output"]
 
     while True:
+        _clear()
         _header("Editar workflow")
         console.print(render_workflows_table(workflows.list()))
         choice = await ask(
@@ -433,6 +447,7 @@ async def _session(paths: ProjectPaths) -> None:
 
     try:
         while True:
+            _clear()
             _header("Dashboard")
             console.print(
                 f"[dim]Proyecto:[/dim] {paths.root}  [dim]Workflows:[/dim] "
@@ -489,3 +504,12 @@ def run_dashboard(project: Path | None = None) -> None:
         console.print(f"[red]Error:[/red] {exc}")
         raise SystemExit(1) from exc
     asyncio.run(_session(paths))
+    _clear()
+    console.print(
+        Panel(
+            f"Proyecto: [cyan]{paths.root}[/cyan]\n"
+            "Sesión terminada. Vuelve a abrir con [bold]penfold .[/bold].",
+            title="Penfold",
+            border_style="cyan",
+        )
+    )

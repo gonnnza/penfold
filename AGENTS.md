@@ -167,3 +167,4 @@ expone la API REST y SSE.
 | 2026-11-23 | Diagramas del workflow en terminal (`penfold workflow diagram`, opción `[5]` de la TUI). 43 tests pasan. | — |
 | 2026-11-23 | Editor de workflows por terminal (`WorkflowEditor`, comandos `workflow new/add-node/connect/set/...` y opción `[6]` de la TUI). 47 tests pasan. | — |
 | 2026-11-23 | Eliminados los agentes por defecto: `init` solo instala workflows, que ahora usan nodos `command`. Fixtures de tests con agentes mínimos. 47 tests pasan. | — |
+| 2026-11-23 | La TUI limpia la pantalla en cada vista y deja un panel final al salir. 47 tests pasan. | — |
