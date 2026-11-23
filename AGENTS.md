@@ -160,3 +160,4 @@ expone la API REST y SSE.
 | 2026-11-23 | Eliminado todo el frontend web (`web/`, bundle estático, rutas de UI, `force-include` y ADR-0007). La TUI y la CLI son la única interfaz. | — |
 | 2026-11-23 | Git dividido en MVC: `models/git.py` (`RepoInfo`), `services/git.py` (`GitService`) y vista CLI `penfold git`. Sin cambios en el motor. | — |
 | 2026-11-23 | Opción global `--project` y instalación con `uv tool install`; la CLI funciona desde cualquier carpeta. 39 tests pasan. | — |
+| 2026-11-23 | Atajo `penfold .`: inicializa la carpeta si hace falta y abre la TUI. 40 tests pasan. | — |

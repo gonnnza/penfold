@@ -122,6 +122,13 @@ No hace falta estar dentro del repo de Penfold. En el directorio de tu proyecto:
 
 ```bash
 cd /electrolux
+penfold .         # crea .orchestrator/ si falta y abre la TUI en esa carpeta
+```
+
+O, si prefieres hacerlo paso a paso:
+
+```bash
+cd /electrolux
 penfold init      # crea .orchestrator/ con config, agentes y workflows
 penfold doctor    # comprueba entorno, dependencias y puerto
 penfold tui       # abre el dashboard interactivo de terminal
@@ -164,6 +171,7 @@ Guía completa: [Getting started](docs/user-guide/GETTING_STARTED.md).
 
 | Comando | Qué hace |
 |---|---|
+| `penfold .` | Inicializa `.orchestrator/` en la carpeta actual si falta y abre la TUI. |
 | `penfold init` | Inicializa `.orchestrator/` en el proyecto actual. |
 | `penfold doctor` | Diagnostica instalación, configuración y estado local. |
 | `penfold tui` | Abre el dashboard interactivo de terminal. |

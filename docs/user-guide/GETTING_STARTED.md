@@ -38,8 +38,16 @@ En el repositorio donde quieras trabajar (por ejemplo `/electrolux`):
 
 ```bash
 cd /electrolux
+penfold .         # inicializa si hace falta y abre la TUI en esta carpeta
+```
+
+O bien, paso a paso:
+
+```bash
+cd /electrolux
 penfold init
 penfold doctor
+penfold tui
 ```
 
 No hace falta estar en el repo de Penfold. Los comandos buscan `.orchestrator/`

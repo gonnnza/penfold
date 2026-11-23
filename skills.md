@@ -320,7 +320,9 @@ un proyecto (p. ej. `/electrolux`) que no es el repo de Penfold.
 1. Instala el comando: `uv tool install .` desde el repo, o
    `uv tool install git+https://github.com/gonnnza/penfold.git`. Verifica con
    `penfold --version`.
-2. En el proyecto de usuario: `cd /electrolux && penfold init && penfold tui`.
+2. En el proyecto de usuario basta con `cd /electrolux && penfold .`: inicializa
+   `.orchestrator/` si no existe y abre la TUI. Equivale a
+   `penfold init && penfold tui`.
 3. Desde cualquier otra carpeta, apunta con la opción global (va **antes** del
    subcomando): `penfold --project /electrolux workflow list`,
    `penfold --project /electrolux run simple -i "feature_description=JWT"`,
@@ -355,6 +357,7 @@ desde `/tmp/opencode/electrolux` y desde `/tmp` con `--project`.
 | 2026-11-23 | Eliminada `recompilar-ui` y todas las referencias al frontend web. | — |
 | 2026-11-23 | Git dividido en MVC; `anadir-endpoint-mvc` documenta la CLI/TUI como vistas con `penfold git` de ejemplo. | — |
 | 2026-11-23 | Añadida `usar-desde-cualquier-carpeta` (opción global `--project`). | — |
+| 2026-11-23 | `usar-desde-cualquier-carpeta` documenta el atajo `penfold .`. | — |
 
 > Si quieres convertir alguna de estas skills en una skill real de OpenCode,
 > muévela a `.opencode/skills/<nombre>/SKILL.md` con frontmatter `name` y
