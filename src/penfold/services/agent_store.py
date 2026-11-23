@@ -26,7 +26,7 @@ class AgentStore:
                 continue
         return agents
 
-    def get(self, agent_id: str) -> AgentDefinition:
+    def get_by_id(self, agent_id: str) -> AgentDefinition:
         path = self.paths.agent_path(agent_id)
         if not path.is_file():
             raise NotFoundError(f"Agente {agent_id!r} no encontrado en {path}")
@@ -43,17 +43,19 @@ class AgentStore:
 
     def delete(self, agent_id: str) -> None:
         path = self.paths.agent_path(agent_id)
+
         if not path.is_file():
             raise NotFoundError(f"Agente {agent_id!r} no encontrado")
+
         path.unlink()
 
     @staticmethod
     def _parse(raw: str) -> AgentDefinition:
         try:
             data = yaml.safe_load(raw)
+            return AgentDefinition.model_validate(data)
+
         except yaml.YAMLError as exc:
             raise PenfoldValidationError(f"YAML de agente inválido: {exc}") from exc
-        try:
-            return AgentDefinition.model_validate(data)
         except ValidationError as exc:
             raise PenfoldValidationError(f"Definición de agente inválida: {exc}") from exc

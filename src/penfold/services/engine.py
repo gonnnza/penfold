@@ -353,7 +353,7 @@ class GraphWorkflowEngine:
     ) -> tuple[dict[str, Any], str, bool]:
         if not node.agent:
             raise ValidationError(f"El nodo {node.id} no declara un agente.")
-        agent = self.ctx.agents.get(node.agent)
+        agent = self.ctx.agents.get_by_id(node.agent)
         runtime = get_runtime(agent.runtime.type)
         await runtime.validate()
         options: dict[str, Any] = {

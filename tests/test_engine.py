@@ -150,7 +150,7 @@ def test_approval_approve_and_reject(components) -> None:
 
 def test_cancel_interrupts_execution(components) -> None:
     _, _, agents, _, repository, _, manager = components
-    analyst = agents.get("product-analyst")
+    analyst = agents.get_by_id("product-analyst")
     analyst.mock.delay_seconds = 2.0
     agents.save(analyst)
 

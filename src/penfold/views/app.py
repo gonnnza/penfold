@@ -143,7 +143,7 @@ def create_app(paths: ProjectPaths, config: ProjectConfig, *, token: str) -> Fas
 
     @app.get("/api/agents/{agent_id}")
     async def get_agent(agent_id: str) -> AgentDefinition:
-        return agents.get(agent_id)
+        return agents.get_by_id(agent_id)
 
     @app.put("/api/agents/{agent_id}")
     async def save_agent(agent_id: str, agent: AgentDefinition) -> dict:
