@@ -127,12 +127,6 @@ def doctor() -> None:
     import shutil
 
     add("Git", shutil.which("git") is not None, shutil.which("git") or "no encontrado")
-    add("Node", shutil.which("node") is not None, shutil.which("node") or "no encontrado")
-    add(
-        "pnpm",
-        shutil.which("pnpm") is not None,
-        shutil.which("pnpm") or "instalar con npm i -g pnpm",
-    )
     try:
         _components()
         add("Proyecto inicializado", True, "config.yaml encontrado")
