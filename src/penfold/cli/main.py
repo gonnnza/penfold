@@ -16,19 +16,20 @@ from rich.console import Console
 from rich.table import Table
 
 from penfold import __version__
-from penfold.agents.store import AgentStore
-from penfold.agents.templates import install_default_agents
 from penfold.config.paths import ProjectPaths, find_project
 from penfold.errors import PenfoldError
-from penfold.execution.approval import ConsoleApprovalGate
-from penfold.execution.events import EventBus
-from penfold.execution.manager import RunManager
-from penfold.execution.models import RunStatus
-from penfold.execution.repository import RunRepository
-from penfold.server.auth import new_token
-from penfold.workflows.store import WorkflowStore
-from penfold.workflows.templates import install_default_workflows
-from penfold.workflows.validator import validate_workflow
+from penfold.models.execution import RunStatus
+from penfold.services.agent_store import AgentStore
+from penfold.services.agent_templates import install_default_agents
+from penfold.services.approval import ConsoleApprovalGate
+from penfold.services.events import EventBus
+from penfold.services.manager import RunManager
+from penfold.services.repository import RunRepository
+from penfold.services.validator import validate_workflow
+from penfold.services.workflow_store import WorkflowStore
+from penfold.services.workflow_templates import install_default_workflows
+from penfold.tui import run_dashboard
+from penfold.views.auth import new_token
 
 app = typer.Typer(
     name="penfold",
@@ -167,7 +168,7 @@ def start(
         config.server.port = port
     token = paths.read_token() or new_token()
     paths.write_token(token)
-    from penfold.server.app import create_app
+    from penfold.views.app import create_app
 
     application = create_app(paths, config, token=token)
     base_url = f"http://{config.server.host}:{config.server.port}"
@@ -187,6 +188,12 @@ def start(
         )
     )
     server.run()
+
+
+@app.command()
+def tui() -> None:
+    """Abrir el dashboard interactivo de terminal (equivalente al panel web)."""
+    run_dashboard()
 
 
 @app.command()
