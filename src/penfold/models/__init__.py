@@ -12,6 +12,7 @@ from penfold.models.agent import (
     Permissions,
     RuntimeSpec,
 )
+from penfold.models.approval import ApprovalDecision
 from penfold.models.config import (
     DefaultsConfig,
     ExecutionConfig,
@@ -32,6 +33,7 @@ from penfold.models.execution import (
 )
 from penfold.models.git import RepoInfo
 from penfold.models.runtime import RuntimeContext, RuntimeResult
+from penfold.models.validation import ValidationIssue
 from penfold.models.workflow import (
     EdgeConfig,
     Handle,
@@ -48,6 +50,7 @@ __all__ = [
     "AgentDefinition",
     "AgentInput",
     "AgentOutputs",
+    "ApprovalDecision",
     "ApprovalInfo",
     "ApprovalRequest",
     "DefaultsConfig",
@@ -72,6 +75,7 @@ __all__ = [
     "SecurityConfig",
     "ServerConfig",
     "StartRunRequest",
+    "ValidationIssue",
     "WorkflowDefinition",
     "WorkflowEdge",
     "WorkflowInput",

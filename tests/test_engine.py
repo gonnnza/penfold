@@ -5,9 +5,10 @@ from __future__ import annotations
 import asyncio
 
 from penfold.models.agent import AgentDefinition
+from penfold.models.approval import ApprovalDecision
 from penfold.models.execution import NodeState, NodeStatus, RunDetail, RunStatus
 from penfold.models.workflow import WorkflowDefinition
-from penfold.services.approval import ApprovalDecision, AutoApproveGate
+from penfold.services.approval import AutoApproveGate
 from penfold.services.workflow_templates import default_workflows
 
 

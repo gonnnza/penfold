@@ -6,15 +6,8 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Any
 
-from pydantic import BaseModel
-
 from penfold.errors import ExecutionError
-
-
-class ApprovalDecision(BaseModel):
-    decision: str
-    data: Any = None
-    note: str | None = None
+from penfold.models.approval import ApprovalDecision
 
 
 class ApprovalGate(ABC):
@@ -82,16 +75,19 @@ class ConsoleApprovalGate(ApprovalGate):
     """Aprobación por terminal para ejecuciones CLI interactivas."""
 
     async def request(self, run_id, node_id, title, message, data) -> ApprovalDecision:
+
         print(f"\n[Aprobación requerida] {title}")
+
         if message:
             print(message)
+
         try:
             answer = await asyncio.to_thread(input, "¿Aprobar? [s/n]: ")
-        except EOFError as exc:
+        except EOFError as e:
             raise ExecutionError(
                 "Se requiere aprobación humana pero la terminal no es interactiva. "
                 "Usa el servidor local y la interfaz para aprobar."
-            ) from exc
+            ) from e
         if answer.strip().lower() in {"s", "si", "sí", "y", "yes"}:
             return ApprovalDecision(decision="approve")
         return ApprovalDecision(decision="reject", note="rechazado desde la terminal")

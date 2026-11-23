@@ -54,7 +54,7 @@ penfold --project /ruta/al/proyecto tui
 
 | Zona | Contenido |
 |---|---|
-| `src/penfold/models/` | **MODEL**: solo declaración de clases Pydantic/enums (`workflow`, `agent`, `execution`, `config`, `runtime`, `git`). Sin lógica. |
+| `src/penfold/models/` | **MODEL**: solo declaración de clases Pydantic/enums (`workflow`, `agent`, `execution`, `config`, `runtime`, `git`, `approval`, `validation`). Sin lógica. |
 | `src/penfold/services/` | **SERVICE**: toda la lógica de negocio (`engine`, `manager`, `validator`, `repository`, `stores`, `templates`, `approval`, `context`, `events`, `git`, `runtimes/`). |
 | `src/penfold/views/` | **VIEW**: endpoints FastAPI, SSE y middleware de token (`app.py`, `auth.py`). 23 rutas. |
 | `src/penfold/tui/` | **TUI**: dashboard Rich de terminal (`penfold tui`). Llama a services en proceso, sin HTTP ni token. |
@@ -167,4 +167,6 @@ expone la API REST y SSE.
 | 2026-11-23 | Diagramas del workflow en terminal (`penfold workflow diagram`, opción `[5]` de la TUI). 43 tests pasan. | — |
 | 2026-11-23 | Editor de workflows por terminal (`WorkflowEditor`, comandos `workflow new/add-node/connect/set/...` y opción `[6]` de la TUI). 47 tests pasan. | — |
 | 2026-11-23 | Eliminados los agentes por defecto: `init` solo instala workflows, que ahora usan nodos `command`. Fixtures de tests con agentes mínimos. 47 tests pasan. | — |
+| 2026-11-23 | `ApprovalDecision` y `ValidationIssue` movidos de `services/` a `models/`; siguen en services las tablas ORM y `EngineContext`. 47 tests pasan. | — |
 | 2026-11-23 | La TUI limpia la pantalla en cada vista y deja un panel final al salir. 47 tests pasan. | — |
+| 2026-11-23 | Interfaz full-screen estilo lazygit (`tui/lazy.py`, atajos j/k/Enter/n/d/r/q); `--classic` mantiene la anterior. 50 tests pasan. | — |

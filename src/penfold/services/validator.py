@@ -8,17 +8,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
-
+from penfold.models.validation import ValidationIssue
 from penfold.models.workflow import WorkflowDefinition, WorkflowEdge
 
 VALID_OPS = {"eq", "ne", "gt", "gte", "lt", "lte", "contains", "in", "exists"}
-
-
-class ValidationIssue(BaseModel):
-    path: str
-    message: str
-    severity: str = "error"
 
 
 def _error(path: str, message: str) -> ValidationIssue:

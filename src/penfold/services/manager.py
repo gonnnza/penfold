@@ -8,6 +8,7 @@ from typing import Any
 
 from penfold.config.paths import ProjectPaths
 from penfold.errors import NotFoundError, ValidationError
+from penfold.models.approval import ApprovalDecision
 from penfold.models.config import ProjectConfig
 from penfold.models.execution import (
     ApprovalRequest,
@@ -17,7 +18,7 @@ from penfold.models.execution import (
     RunStatus,
 )
 from penfold.services.agent_store import AgentStore
-from penfold.services.approval import ApprovalDecision, ApprovalGate, QueueApprovalGate
+from penfold.services.approval import ApprovalGate, QueueApprovalGate
 from penfold.services.engine import EngineContext, GraphWorkflowEngine
 from penfold.services.events import EventBus
 from penfold.services.repository import RunRepository

@@ -39,6 +39,7 @@ Formato de cada entrada:
 | [`usar-dashboard-terminal`](#usar-dashboard-terminal) | validado | 2026-11-23 |
 | [`usar-desde-cualquier-carpeta`](#usar-desde-cualquier-carpeta) | validado | 2026-11-23 |
 | [`editar-workflow-terminal`](#editar-workflow-terminal) | validado | 2026-11-23 |
+| [`interfaz-lazygit`](#interfaz-lazygit) | validado | 2026-11-23 |
 
 ---
 
@@ -383,6 +384,39 @@ con comandos `workflow new/add-node/connect/set`, validado y ejecutado.
 
 ---
 
+## interfaz-lazygit
+
+**Estado:** validado
+**Cuándo usarla:** al abrir Penfold en una terminal interactiva y querer una
+vista tipo lazygit/lazydocker en pantalla completa.
+
+**Entrada:** proyecto inicializado (`penfold .` o `penfold tui`).
+
+**Pasos:**
+1. `penfold .` o `penfold tui` abre `LazyDashboard` en pantalla alternativa
+   (`Live(screen=True)`) si hay TTY. Con stdin redirigido o `penfold tui
+   --classic` se usa el dashboard por prompts.
+2. Columna izquierda: workflows; columna derecha: diagrama u historial de
+   ejecuciones; barra inferior: atajos y mensaje de estado.
+3. Atajos: `j`/`k` o ↑/↓ navegan, `Enter` ejecuta, `n` crea workflow (entrada
+   inline), `d` muestra el diagrama, `r` muestra los runs, `f` refresca,
+   `q`/`Esc` sale dejando un panel final.
+4. Para añadir nodos o conexiones, usa los comandos `penfold workflow ...`
+   (skill `editar-workflow-terminal`); la vista full-screen se centra en
+   explorar y ejecutar.
+
+**Verificación:** en una PTY, `q` debe restaurar la pantalla y dejar el panel
+de despedida como último contenido; sin TTY, `penfold tui` debe funcionar igual
+que antes. Tests: `tests/test_lazy.py` (render y atajos, sin TTY).
+
+**Trampas:** la lectura de teclas pone stdin en modo raw con `termios` y lo
+restaura siempre. En Windows haría falta `windows-curses`/alternativa; el MVP
+asume Linux/macOS. `Live(screen=True)` restaura la pantalla anterior al salir.
+
+**Última práctica:** 2026-11-23 — verificación en PTY con teclas `j`, `r` y `q`.
+
+---
+
 ## Registro de cambios
 
 | Fecha | Cambio | Nota |
@@ -398,6 +432,8 @@ con comandos `workflow new/add-node/connect/set`, validado y ejecutado.
 | 2026-11-23 | Añadida `editar-workflow-terminal` para crear y modificar grafos sin UI web. | — |
 | 2026-11-23 | Eliminados los agentes por defecto; los workflows de ejemplo usan nodos `command` y los tests definen sus propios agentes. | — |
 | 2026-11-23 | La TUI limpia cada vista (`_clear`) y deja un panel final al salir. | — |
+| 2026-11-23 | Modelos Pydantic encontrados en services (`ApprovalDecision`, `ValidationIssue`) movidos a `models/`. | — |
+| 2026-11-23 | Añadida `interfaz-lazygit` para la TUI full-screen con atajos. | — |
 
 > Si quieres convertir alguna de estas skills en una skill real de OpenCode,
 > muévela a `.opencode/skills/<nombre>/SKILL.md` con frontmatter `name` y

@@ -58,9 +58,14 @@ Desde 0.1 el backend sigue un **MVC estricto** ([ADR-0006](architecture/adr/0006
 
 | Capa | Paquete | Contenido | Regla |
 |---|---|---|---|
-| **Model** | `src/penfold/models/` | Clases Pydantic, enums y alias de tipos (`workflow`, `agent`, `execution`, `config`, `runtime`). | **Solo declaración de clases.** Sin lógica de negocio, sin disco, sin HTTP. |
+| **Model** | `src/penfold/models/` | Clases Pydantic, enums y alias de tipos (`workflow`, `agent`, `execution`, `config`, `runtime`, `git`, `approval`, `validation`). | **Solo declaración de clases.** Sin lógica de negocio, sin disco, sin HTTP. |
 | **Service** | `src/penfold/services/` | Motor (`engine`), ciclo de vida (`manager`), validación, repositorio, stores, plantillas, runtimes y utilidades de dominio. | **Toda la lógica de negocio vive aquí.** No abre endpoints. |
 | **View** | `src/penfold/views/` | Endpoints FastAPI (`app.py`), SSE y middleware de token (`auth.py`). | **Solo transporte.** Delega en services y serializa models. |
+
+Dos clases siguen en `services/` a propósito: las tablas ORM de SQLAlchemy de
+`repository.py` (mapeo de persistencia, no contratos de dominio) y
+`EngineContext` (dataclass que cablea services para el motor; moverla a `models/`
+invertiría la dependencia `models → services`).
 
 La TUI (`src/penfold/tui/`) y la CLI (`src/penfold/cli/`) son **adaptadores de
 entrada** equivalentes a la view: llaman a los mismos services, no contienen
