@@ -19,7 +19,7 @@ def _raw(index: int) -> dict:
     return default_workflows()[index].model_dump(mode="json")
 
 
-def test_sequential_run_uses_mock_and_real_command(components) -> None:
+def test_sequential_run_uses_commands(components) -> None:
     *_, repository, events, manager = components
 
     async def scenario():
@@ -27,8 +27,8 @@ def test_sequential_run_uses_mock_and_real_command(components) -> None:
         final = await _finish(manager, run.id)
         assert final.status == RunStatus.COMPLETED
         states = {node.node_id: node for node in final.nodes}
-        assert states["analyst"].simulated is True
-        assert states["analyst"].runtime == "mock:product-analyst"
+        assert states["analyst"].simulated is False
+        assert states["analyst"].runtime == "command"
         assert states["tests"].simulated is False
         assert states["tests"].output["exit_code"] == 0
         assert final.outputs["data"]["requirements"]
@@ -60,6 +60,7 @@ def test_contract_violation_retries_and_fails(components) -> None:
     raw = _raw(0)
     raw["metadata"]["id"] = "contract-test"
     raw["nodes"] = [raw["nodes"][0], raw["nodes"][1], raw["nodes"][3]]
+    raw["nodes"][1]["type"] = "agent"
     raw["nodes"][1]["agent"] = "bad-output"
     raw["edges"] = [raw["edges"][0], {"id": "e-direct", "source": "analyst", "target": "output"}]
     raw["nodes"][2]["config"]["inputs"] = {}
@@ -148,15 +149,19 @@ def test_approval_approve_and_reject(components) -> None:
     asyncio.run(scenario())
 
 
-def test_cancel_interrupts_execution(components) -> None:
-    _, _, agents, _, repository, _, manager = components
-    analyst = agents.get_by_id("product-analyst")
-    analyst.mock.delay_seconds = 2.0
-    agents.save(analyst)
+def test_cancel_interrupts_execution(components, project) -> None:
+    _, _, _, workflows, repository, _, manager = components
+    script = project.root / "slow_cancel.py"
+    script.write_text("import time\ntime.sleep(3)\n", encoding="utf-8")
+    raw = _raw(0)
+    next(node for node in raw["nodes"] if node["id"] == "analyst")["config"]["command"] = (
+        "python slow_cancel.py"
+    )
+    workflows.save(WorkflowDefinition.model_validate(raw))
 
     async def scenario():
         run = await manager.start("simple", {"feature_description": "x"})
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.4)
         manager.cancel(run.id)
         final = await _finish(manager, run.id)
         assert final.status == RunStatus.CANCELLED
@@ -261,6 +266,7 @@ def test_command_timeout_and_read_only_permission(components, project) -> None:
         read_only_run = await manager.start("simple", {"feature_description": "x"})
         final_ro = await _finish(manager, read_only_run.id)
         assert final_ro.status == RunStatus.FAILED
-        assert "read_only" in final_ro.node("tests").error
+        # En modo read_only falla el primer nodo command (analyst), antes que tests.
+        assert "read_only" in final_ro.node("analyst").error
 
     asyncio.run(scenario())

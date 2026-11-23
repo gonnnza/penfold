@@ -21,7 +21,6 @@ from penfold.config.paths import ProjectPaths, find_project
 from penfold.errors import PenfoldError
 from penfold.models.execution import RunStatus
 from penfold.services.agent_store import AgentStore
-from penfold.services.agent_templates import install_default_agents
 from penfold.services.approval import ConsoleApprovalGate
 from penfold.services.events import EventBus
 from penfold.services.git import GitService
@@ -61,11 +60,11 @@ def _fail(message: str, code: int = 1) -> None:
 def _initialize(paths: ProjectPaths, *, name: str | None = None, force: bool = False) -> None:
     """Crea la estructura .orchestrator/ y sus definiciones por defecto."""
     paths.init(name=name, force=force)
-    n_agents = install_default_agents(paths)
     n_workflows = install_default_workflows(paths)
     RunRepository(paths.db_path)
     console.print(f"[green]✓[/green] Proyecto inicializado en {paths.base}")
-    console.print(f"  Agentes creados: {n_agents} · Workflows creados: {n_workflows}")
+    console.print(f"  Workflows creados: {n_workflows}")
+    console.print("  Agentes: crea tus definiciones en .orchestrator/agents/*.yaml")
     console.print("  Base de datos: " + str(paths.db_path))
 
 

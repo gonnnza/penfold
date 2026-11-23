@@ -31,6 +31,7 @@ def test_duplicate_node_ids_rejected() -> None:
 
 def test_unknown_agent_and_disconnected_node_are_errors() -> None:
     raw = default_workflows()[0].model_dump(mode="json")
+    raw["nodes"][1]["type"] = "agent"
     raw["nodes"][1]["agent"] = "no-existe"
     raw["nodes"].append(
         {

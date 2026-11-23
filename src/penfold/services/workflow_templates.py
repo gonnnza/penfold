@@ -1,7 +1,8 @@
 """Workflows de ejemplo instalados por ``penfold init``.
 
-Son ejemplos ejecutables con MockRuntime; no simulan agentes reales: la UI y
-los logs los marcan como ejecuciones simuladas.
+Son ejemplos ejecutables sin agentes: usan nodos `command` con comandos
+locales inocuos. Para usar nodos `agent`, crea primero tus definiciones YAML en
+`.orchestrator/agents/`.
 """
 
 from __future__ import annotations
@@ -39,11 +40,13 @@ def simple_workflow() -> WorkflowDefinition:
                 },
                 {
                     "id": "analyst",
-                    "type": "agent",
-                    "agent": "product-analyst",
-                    "label": "Product Analyst",
+                    "type": "command",
+                    "label": "Analizar requisitos",
                     "position": {"x": 260, "y": 160},
-                    "config": {"inputs": {"feature_description": "$inputs.feature_description"}},
+                    "config": {
+                        "command": "python -c \"print('requirements for JWT')\"",
+                        "timeout": 60,
+                    },
                 },
                 {
                     "id": "tests",
@@ -64,7 +67,7 @@ def simple_workflow() -> WorkflowDefinition:
                     "config": {
                         "format": "json",
                         "inputs": {
-                            "requirements": "$nodes.analyst.output.requirements",
+                            "requirements": "$nodes.analyst.output.stdout",
                             "tests": "$nodes.tests.output",
                         },
                     },
@@ -105,22 +108,17 @@ def feature_development_workflow() -> WorkflowDefinition:
                 },
                 {
                     "id": "analyst",
-                    "type": "agent",
-                    "agent": "product-analyst",
-                    "label": "Product Analyst",
+                    "type": "command",
+                    "label": "Analizar requisitos",
                     "position": {"x": 240, "y": 220},
-                    "config": {"inputs": {"feature_description": "$inputs.feature_description"}},
+                    "config": {"command": "python -c \"print('requirements')\""},
                 },
                 {
                     "id": "developer",
-                    "type": "agent",
-                    "agent": "developer",
-                    "label": "Developer Agent",
+                    "type": "command",
+                    "label": "Implementar cambio",
                     "position": {"x": 500, "y": 220},
-                    "config": {
-                        "inputs": {"requirements": "$nodes.analyst.output"},
-                        "context": ["analyst.output.acceptance_criteria"],
-                    },
+                    "config": {"command": "python -c \"print('developer summary')\""},
                 },
                 {
                     "id": "tests",
@@ -151,7 +149,7 @@ def feature_development_workflow() -> WorkflowDefinition:
                     "config": {
                         "format": "json",
                         "inputs": {
-                            "summary": "$nodes.developer.output.summary",
+                            "summary": "$nodes.developer.output.stdout",
                             "tests": "$nodes.tests.output",
                         },
                     },
@@ -208,11 +206,10 @@ def approval_workflow() -> WorkflowDefinition:
                 },
                 {
                     "id": "analyst",
-                    "type": "agent",
-                    "agent": "product-analyst",
-                    "label": "Product Analyst",
+                    "type": "command",
+                    "label": "Analizar propuesta",
                     "position": {"x": 240, "y": 100},
-                    "config": {"inputs": {"feature_description": "$inputs.feature_description"}},
+                    "config": {"command": "python -c \"print('requirements')\""},
                 },
                 {
                     "id": "approve",
@@ -222,7 +219,7 @@ def approval_workflow() -> WorkflowDefinition:
                     "config": {
                         "title": "¿Aprobar el análisis?",
                         "message": "Revisa los requisitos propuestos.",
-                        "inputs": {"requirements": "$nodes.analyst.output"},
+                        "inputs": {"requirements": "$nodes.analyst.output.stdout"},
                     },
                 },
                 {

@@ -5,10 +5,11 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+import yaml
 
 from penfold.config.paths import ProjectPaths
+from penfold.models.agent import AgentDefinition
 from penfold.services.agent_store import AgentStore
-from penfold.services.agent_templates import install_default_agents
 from penfold.services.events import EventBus
 from penfold.services.manager import RunManager
 from penfold.services.repository import RunRepository
@@ -16,11 +17,60 @@ from penfold.services.workflow_store import WorkflowStore
 from penfold.services.workflow_templates import install_default_workflows
 
 
+def _install_test_agents(paths: ProjectPaths) -> None:
+    """Agentes mínimos para los tests de nodos `agent`; no son plantillas de producto."""
+    specs = [
+        {
+            "id": "product-analyst",
+            "name": "Product Analyst",
+            "role": "analyst",
+            "runtime": {"type": "mock"},
+            "permissions": {"mode": "read_only", "read_paths": ["."]},
+            "inputs": [{"name": "feature_description", "type": "string"}],
+            "outputs": {
+                "format": "json",
+                "schema": {
+                    "type": "object",
+                    "required": ["requirements", "acceptance_criteria"],
+                    "properties": {
+                        "requirements": {"type": "array", "items": {"type": "string"}},
+                        "acceptance_criteria": {"type": "array", "items": {"type": "string"}},
+                    },
+                },
+            },
+            "retries": 1,
+            "mock": {
+                "output": {
+                    "task": "demo",
+                    "requirements": ["La funcionalidad solicitada está implementada"],
+                    "acceptance_criteria": ["Los tests pasan"],
+                    "assumptions": [],
+                    "open_questions": [],
+                }
+            },
+        },
+        {
+            "id": "architect",
+            "name": "Architect Agent",
+            "role": "architect",
+            "runtime": {"type": "mock"},
+            "mock": {"output": {"plan": ["Revisar el código existente"]}},
+        },
+    ]
+    for spec in specs:
+        agent = AgentDefinition.model_validate(spec)
+        path = paths.agent_path(agent.id)
+        path.write_text(
+            yaml.safe_dump(agent.model_dump(mode="json", exclude_none=True), sort_keys=False),
+            encoding="utf-8",
+        )
+
+
 @pytest.fixture
 def project(tmp_path: Path) -> ProjectPaths:
     paths = ProjectPaths(tmp_path)
     paths.init(name="test-project")
-    install_default_agents(paths)
+    _install_test_agents(paths)
     install_default_workflows(paths)
     return paths
 

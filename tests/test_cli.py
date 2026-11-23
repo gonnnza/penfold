@@ -15,7 +15,7 @@ def test_init_creates_layout(tmp_path) -> None:
     assert result.exit_code == 0, result.output
     paths = ProjectPaths(tmp_path)
     assert paths.config_file.is_file()
-    assert len(list(paths.agents_dir.glob("*.yaml"))) == 6
+    assert len(list(paths.agents_dir.glob("*.yaml"))) == 0
     assert len(list(paths.workflows_dir.glob("*.yaml"))) == 3
     assert paths.db_path.is_file()
     assert (paths.base / ".gitignore").is_file()
@@ -77,7 +77,7 @@ def test_cli_workflow_and_agent_commands(tmp_path, monkeypatch) -> None:
     validated = runner.invoke(app, ["workflow", "validate", "simple"])
     assert validated.exit_code == 0 and "válido" in validated.output
     agents = runner.invoke(app, ["agent", "list"])
-    assert agents.exit_code == 0 and "product-analyst" in agents.output
+    assert agents.exit_code == 0 and "product-analyst" not in agents.output
     runs = runner.invoke(app, ["runs"])
     assert runs.exit_code == 0
 
