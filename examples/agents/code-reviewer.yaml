@@ -1,0 +1,46 @@
+schema_version: 1
+id: code-reviewer
+name: Code Reviewer
+description: Agente reviewer de ejemplo. Edita .orchestrator/agents/code-reviewer.yaml.
+role: reviewer
+instructions: Revisa los cambios por corrección, mantenibilidad, seguridad y cumplimiento
+  de requisitos. Aprueba o solicita cambios concretos.
+runtime:
+  type: mock
+  args: []
+tools: []
+permissions:
+  mode: read_only
+  read_paths:
+  - .
+  write_paths: []
+  allowed_commands: []
+inputs:
+- name: changes
+  type: object
+  required: true
+outputs:
+  format: json
+  schema:
+    type: object
+    properties:
+      approved:
+        type: boolean
+      findings:
+        type: array
+        items:
+          type: string
+      required_changes:
+        type: array
+        items:
+          type: string
+    required:
+    - approved
+timeout: 300
+retries: 1
+mock:
+  output:
+    approved: true
+    findings: []
+    required_changes: []
+  delay_seconds: 0.0

@@ -1,0 +1,63 @@
+schema_version: 1
+id: developer
+name: Developer Agent
+description: Agente developer de ejemplo. Edita .orchestrator/agents/developer.yaml.
+role: developer
+instructions: Implementa el trabajo asignado en el workspace autorizado, respetando
+  las restricciones y reportando los cambios realizados.
+runtime:
+  type: mock
+  args: []
+tools:
+- read_file
+- write_file
+- shell
+permissions:
+  mode: workspace_write
+  read_paths:
+  - .
+  write_paths:
+  - .
+  allowed_commands: []
+inputs:
+- name: instructions
+  type: string
+  required: true
+- name: requirements
+  type: object
+  required: true
+outputs:
+  format: json
+  schema:
+    type: object
+    properties:
+      files_modified:
+        type: array
+        items:
+          type: string
+      summary:
+        type: string
+      diff:
+        type: string
+      notes:
+        type: array
+        items:
+          type: string
+      errors:
+        type: array
+        items:
+          type: string
+    required:
+    - files_modified
+    - summary
+timeout: 300
+retries: 1
+mock:
+  output:
+    files_modified: []
+    summary: 'Simulación: no se realizaron cambios reales (MockRuntime).'
+    diff: ''
+    notes:
+    - 'Ejecución simulada: configura un runtime real para modificar archivos'
+    errors: []
+  delay_seconds: 0.0

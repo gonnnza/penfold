@@ -1,0 +1,55 @@
+schema_version: 1
+id: architect
+name: Architect Agent
+description: Agente architect de ejemplo. Edita .orchestrator/agents/architect.yaml.
+role: architect
+instructions: Analiza la arquitectura existente, identifica componentes afectados,
+  propone un plan mínimo y detecta riesgos.
+runtime:
+  type: mock
+  args: []
+tools: []
+permissions:
+  mode: read_only
+  read_paths:
+  - .
+  write_paths: []
+  allowed_commands: []
+inputs:
+- name: requirements
+  type: object
+  required: true
+outputs:
+  format: json
+  schema:
+    type: object
+    properties:
+      plan:
+        type: array
+        items:
+          type: string
+      decisions:
+        type: array
+        items:
+          type: string
+      affected_files:
+        type: array
+        items:
+          type: string
+      risks:
+        type: array
+        items:
+          type: string
+    required:
+    - plan
+    - affected_files
+timeout: 300
+retries: 1
+mock:
+  output:
+    plan:
+    - 'Simulación: revisar el código existente'
+    decisions: []
+    affected_files: []
+    risks: []
+  delay_seconds: 0.0

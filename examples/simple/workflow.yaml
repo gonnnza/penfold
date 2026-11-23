@@ -1,0 +1,69 @@
+schema_version: 1
+metadata:
+  id: simple
+  name: Simple demo
+  description: Input -> agente (MockRuntime) -> comando -> Output
+inputs:
+- id: feature_description
+  type: string
+  required: true
+  default: Añadir autenticación JWT
+nodes:
+- id: start
+  type: input
+  label: User Request
+  description: Petición inicial del usuario
+  position:
+    x: 0.0
+    y: 160.0
+  config: {}
+- id: analyst
+  type: agent
+  label: Product Analyst
+  agent: product-analyst
+  position:
+    x: 260.0
+    y: 160.0
+  config:
+    inputs:
+      feature_description: $inputs.feature_description
+- id: tests
+  type: command
+  label: Run Tests
+  description: 'Comando de ejemplo: reemplázalo por tu suite de tests real'
+  position:
+    x: 540.0
+    y: 160.0
+  config:
+    command: python -c "print('replace with your test suite')"
+    timeout: 60
+- id: output
+  type: output
+  label: Final Report
+  position:
+    x: 820.0
+    y: 160.0
+  config:
+    format: json
+    inputs:
+      requirements: $nodes.analyst.output.requirements
+      tests: $nodes.tests.output
+edges:
+- id: e1
+  source: start
+  target: analyst
+  source_handle: default
+  config:
+    loop: false
+- id: e2
+  source: analyst
+  target: tests
+  source_handle: default
+  config:
+    loop: false
+- id: e3
+  source: tests
+  target: output
+  source_handle: default
+  config:
+    loop: false

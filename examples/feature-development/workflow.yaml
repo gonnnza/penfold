@@ -1,0 +1,114 @@
+schema_version: 1
+metadata:
+  id: feature-development
+  name: Feature Development
+  description: Analisis, desarrollo, tests y ciclo de correccion limitado
+inputs:
+- id: feature_description
+  type: string
+  required: true
+  default: Implementar autenticacion JWT
+nodes:
+- id: start
+  type: input
+  label: User Request
+  position:
+    x: 0.0
+    y: 220.0
+  config: {}
+- id: analyst
+  type: agent
+  label: Product Analyst
+  agent: product-analyst
+  position:
+    x: 240.0
+    y: 220.0
+  config:
+    inputs:
+      feature_description: $inputs.feature_description
+- id: developer
+  type: agent
+  label: Developer Agent
+  agent: developer
+  position:
+    x: 500.0
+    y: 220.0
+  config:
+    inputs:
+      requirements: $nodes.analyst.output
+    context:
+    - analyst.output.acceptance_criteria
+- id: tests
+  type: command
+  label: Test Runner
+  description: Comando real de tests ejecutado en el workspace
+  position:
+    x: 760.0
+    y: 220.0
+  config:
+    command: python -c "print('replace with your test suite')"
+    timeout: 120
+- id: check
+  type: condition
+  label: Tests passed?
+  position:
+    x: 1020.0
+    y: 220.0
+  config:
+    inputs:
+      passed: $nodes.tests.output.passed
+    expression:
+      field: passed
+      op: eq
+      value: true
+- id: output
+  type: output
+  label: Final Report
+  position:
+    x: 1280.0
+    y: 100.0
+  config:
+    format: json
+    inputs:
+      summary: $nodes.developer.output.summary
+      tests: $nodes.tests.output
+edges:
+- id: e1
+  source: start
+  target: analyst
+  source_handle: default
+  config:
+    loop: false
+- id: e2
+  source: analyst
+  target: developer
+  source_handle: default
+  config:
+    loop: false
+- id: e3
+  source: developer
+  target: tests
+  source_handle: default
+  config:
+    loop: false
+- id: e4
+  source: tests
+  target: check
+  source_handle: default
+  config:
+    loop: false
+- id: e5
+  source: check
+  target: output
+  source_handle: pass
+  label: PASS
+  config:
+    loop: false
+- id: e6
+  source: check
+  target: developer
+  source_handle: fail
+  label: FAIL
+  config:
+    max_iterations: 3
+    loop: true

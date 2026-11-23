@@ -1,0 +1,52 @@
+schema_version: 1
+id: prompt-engineer
+name: Prompt Engineer
+description: Agente prompt_engineer de ejemplo. Edita .orchestrator/agents/prompt-engineer.yaml.
+role: prompt_engineer
+instructions: Convierte requisitos estructurados en instrucciones técnicas claras,
+  con contexto mínimo y restricciones explícitas.
+runtime:
+  type: mock
+  args: []
+tools: []
+permissions:
+  mode: read_only
+  read_paths:
+  - .
+  write_paths: []
+  allowed_commands: []
+inputs:
+- name: requirements
+  type: object
+  required: true
+outputs:
+  format: json
+  schema:
+    type: object
+    properties:
+      prompt:
+        type: string
+      context:
+        type: array
+        items:
+          type: string
+      constraints:
+        type: array
+        items:
+          type: string
+      expected_output:
+        type: string
+    required:
+    - prompt
+    - constraints
+timeout: 300
+retries: 1
+mock:
+  output:
+    prompt: 'Simulación: implementa la funcionalidad siguiendo los requisitos.'
+    context:
+    - requirements from product-analyst
+    constraints:
+    - No modificar archivos fuera del workspace
+    expected_output: Cambios en el repositorio y resumen de los mismos
+  delay_seconds: 0.0

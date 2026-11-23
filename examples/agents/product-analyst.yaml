@@ -1,0 +1,61 @@
+schema_version: 1
+id: product-analyst
+name: Product Analyst
+description: Agente analyst de ejemplo. Edita .orchestrator/agents/product-analyst.yaml.
+role: analyst
+instructions: Comprende la petición, extrae requisitos, detecta ambigüedades y propone
+  criterios de aceptación verificables. No propone una solución técnica.
+runtime:
+  type: mock
+  args: []
+tools: []
+permissions:
+  mode: read_only
+  read_paths:
+  - .
+  write_paths: []
+  allowed_commands: []
+inputs:
+- name: feature_description
+  type: string
+  required: true
+outputs:
+  format: json
+  schema:
+    type: object
+    properties:
+      task:
+        type: string
+      requirements:
+        type: array
+        items:
+          type: string
+      acceptance_criteria:
+        type: array
+        items:
+          type: string
+      assumptions:
+        type: array
+        items:
+          type: string
+      open_questions:
+        type: array
+        items:
+          type: string
+    required:
+    - task
+    - requirements
+    - acceptance_criteria
+timeout: 300
+retries: 1
+mock:
+  output:
+    task: 'Simulación: analizar la funcionalidad solicitada'
+    requirements:
+    - La funcionalidad solicitada debe estar implementada
+    acceptance_criteria:
+    - Los tests del proyecto pasan correctamente
+    assumptions:
+    - El repositorio contiene una suite de tests
+    open_questions: []
+  delay_seconds: 0.0

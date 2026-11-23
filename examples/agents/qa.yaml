@@ -1,0 +1,52 @@
+schema_version: 1
+id: qa
+name: QA Agent
+description: Agente qa de ejemplo. Edita .orchestrator/agents/qa.yaml.
+role: qa
+instructions: Ejecuta pruebas reales, verifica criterios de aceptación e identifica
+  regresiones.
+runtime:
+  type: mock
+  args: []
+tools:
+- run_tests
+- shell
+permissions:
+  mode: read_only
+  read_paths:
+  - .
+  write_paths: []
+  allowed_commands: []
+inputs:
+- name: acceptance_criteria
+  type: array
+  required: true
+outputs:
+  format: json
+  schema:
+    type: object
+    properties:
+      tests:
+        type: array
+        items:
+          type: string
+      passed:
+        type: boolean
+      failures:
+        type: array
+        items:
+          type: string
+      summary:
+        type: string
+    required:
+    - tests
+    - passed
+timeout: 300
+retries: 1
+mock:
+  output:
+    tests: []
+    passed: true
+    failures: []
+    summary: 'Simulación: sin pruebas ejecutadas'
+  delay_seconds: 0.0
