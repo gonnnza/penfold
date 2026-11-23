@@ -1,150 +1,157 @@
+<div align="center">
+
 # Penfold
 
-> Orquestador visual de agentes de IA, local-first, para desarrollo de software.
-> Versión 0.1 (MVP) — proyecto en construcción.
+### Tus agentes de IA, en un grafo. En tu máquina. En Git.
+
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![Licencia](https://img.shields.io/badge/licencia-MIT-yellow)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-0.1.0-orange)
+![Local-first](https://img.shields.io/badge/local--first-127.0.0.1%3A8765-green)
+![Arquitectura](https://img.shields.io/badge/arquitectura-MVC-blueviolet)
+
+**Orquestador visual local-first para equipos de agentes de IA que desarrollan software.**
+
+Define flujos repetibles como grafos YAML versionables, edítalos en una interfaz
+visual y ejecútalos localmente con progreso en tiempo real, revisión humana y
+reanudación desde checkpoints.
+
+[Instalación](#instalación) · [Inicio rápido](#inicio-rápido) ·
+[Ejemplo](#ejemplo-mínimo) · [Documentación](#documentación)
+
+</div>
+
+---
 
 ## El problema
 
-Un equipo de agentes de IA que trabaja en un repositorio necesita algo más que una
-conversación: necesita **flujos repetibles** con entradas declaradas, pasos con
-responsabilidades claras, condiciones, revisión humana y un registro de lo que
-pasó. Normalmente esa lógica acaba repartida entre prompts copiados, scripts
-ad-hoc y conversaciones que no se pueden reproducir ni auditar.
+Un equipo de agentes necesita algo más que una conversación: necesita
+**flujos repetibles** con entradas declaradas, responsabilidades claras,
+condiciones, revisión humana y un registro auditable. Normalmente esa lógica
+acaba repartida entre prompts copiados, scripts ad-hoc y chats que nadie puede
+reproducir.
 
-Penfold convierte ese flujo en un **grafo editable visualmente** que vive en
-archivos YAML dentro del propio repositorio, y lo ejecuta en tu máquina con un
-motor local. La definición es legible y versionable; la ejecución es observable
-y se puede reanudar.
+| Antes | Con Penfold |
+|---|---|
+| Prompts copiados entre repos | Workflows en `.orchestrator/workflows/*.yaml` |
+| "El agente decide" el siguiente paso | Grafo explícito de nodos y aristas |
+| Salidas opacas | Eventos con `seq`, persistidos y visibles por SSE |
+| No se puede reanudar | Checkpoints + `penfold resume <id>` |
+| Sin revisión | Nodo `approval` que detiene el run |
 
-## Qué NO es Penfold
+La definición es legible y versionable; la ejecución es observable y
+reanudable. Es, en resumen, **Git para la lógica de tus agentes**.
 
-- **No es un chatbot.** No hay una conversación abierta que "decida" qué hacer:
-  el flujo está definido explícitamente y los datos viajan entre nodos mediante
-  mapeos declarativos.
-- **No es un wrapper de un CLI de IA.** No asume `claude`, `codex`, `aider` ni
-  ningún producto concreto. Un agente puede usar `MockRuntime` (determinista)
-  o `CommandRuntime` con el comando y los argumentos que tú declares
-  explícitamente. No se inventan ni se adivinan flags de CLI.
-- **No es un servicio en la nube.** No hay backend remoto, ni cuentas, ni
-  sincronización. Todo se ejecuta en `127.0.0.1`.
-- **No es un sandbox de seguridad.** Los modos de permiso son una guía para el
-  motor y los agentes, no un aislamiento del sistema operativo (ver
-  [SECURITY.md](SECURITY.md)).
+## Qué te llevas
 
-## Principios
+- 🧩 **Seis tipos de nodo** — `input`, `agent`, `command`, `condition`,
+  `approval` y `output`.
+- 🧠 **Neutralidad de proveedor** — `MockRuntime` determinista o
+  `CommandRuntime` con el comando y los argumentos que tú declaras. Nada de
+  adivinar flags de CLIs de IA.
+- 🖱️ **Editor visual que escribe YAML** — round-trip real: lo que editas en la
+  UI se guarda en el archivo. La posición de los nodos es solo presentación.
+- 📡 **Ejecución observable** — SSE con replay por `after=<seq>` y heartbeat.
+- ⏸️ **Reanudable** — los runs interrumpidos pasan a `paused` y continúan sin
+  repetir nodos ya exitosos.
+- ✋ **Humano al mando** — aprueba, rechaza o modifica antes de seguir.
+- 🔒 **Solo local** — `127.0.0.1:8765` y token de acceso local (`0600`).
 
-1. **Local-first**: el servidor escucha solo en `127.0.0.1:8765`; sin nube.
-2. **YAML como fuente de la verdad**: los workflows y agentes son archivos
-   versionables en `.orchestrator/`. La UI edita ese YAML; no hay un formato
-   privado que se pierda al cerrar el editor.
-3. **Definición visual ≠ ejecución**: la posición de los nodos es solo
-   presentación; el motor ignora `position` y trabaja con ids, aristas y datos.
-4. **Sin expresiones ejecutables**: los mapeos (`$inputs...`, `$nodes...`) son
-   cadenas declarativas, nunca código evaluado.
-5. **Ejecución observable**: cada cambio de estado emite un evento con número de
-   secuencia, visible en la UI por SSE y persistido en SQLite.
-6. **Reanudable**: los runs interrumpidos quedan pausados y se reanudan desde
-   checkpoints sin repetir nodos ya exitosos.
-7. **Revisión humana explícita**: el nodo `approval` detiene el run hasta que
-   alguien aprueba, rechaza o modifica.
+### Qué NO es
 
-## Arquitectura resumida
+- ❌ Un chatbot: el flujo está definido, no improvisado.
+- ❌ Un wrapper de un CLI de IA concreto.
+- ❌ Un servicio en la nube: sin cuentas ni sincronización remota.
+- ❌ Un sandbox: los permisos son declaración de intenciones, no aislamiento del
+  SO (ver [SECURITY.md](SECURITY.md)).
+
+## Cómo encaja
 
 ```
-   Terminal                       Navegador (React 19)
-  `penfold`  ──arranca──▶   http://127.0.0.1:8765  (UI servida localmente)
-     │                              │  X-Penfold-Token / ?token=
-     │                              ▼
-     └──────────▶  FastAPI (servidor local)  ◀──── SSE /api/runs/{id}/stream
-                          │
-                          ▼
-                  ExecutionEngine (protocolo propio)
-                          │
-              Nodos: input | agent | command | condition
-                     | approval | output
-                          │
-                  Runtimes: MockRuntime | CommandRuntime
-                          │
-                  Repositorio SQLite + archivos YAML/artefactos
-                 (.orchestrator/state/penfold.db, .orchestrator/runs, ...)
+   Terminal                        Navegador (React 19)
+  `penfold`  ── start ──▶   http://127.0.0.1:8765  (UI servida en local)
+     │                             │  X-Penfold-Token / ?token=
+     │                             ▼
+     ├────────▶  FastAPI (views/)  ◀──── SSE /api/runs/{id}/stream
+     │                             │
+  `penfold tui`                    ▼
+  (dashboard Rich) ──▶ services/ ◀── ExecutionEngine
+                             │
+                  input | agent | command | condition
+                      | approval | output
+                             │
+                  MockRuntime | CommandRuntime
+                             │
+                  SQLite + YAML + artefactos en .orchestrator/
 ```
 
-Capas y decisiones: [ARCHITECTURE.md](ARCHITECTURE.md) y los
-[ADR](docs/architecture/adr/). Contrato HTTP:
-[docs/development/API_CONTRACT.md](docs/development/API_CONTRACT.md).
+La lógica vive en `services/`, los contratos de datos en `models/` y el
+transporte HTTP en `views/` ([ADR-0006](docs/architecture/adr/0006-mvc-layering.md)).
+El CLI y la TUI son adaptadores de entrada que llaman a los mismos services.
 
-## Requisitos
-
-- Python 3.11 o superior
-- [uv](https://docs.astral.sh/uv/) (gestor de entornos y dependencias)
-- Node 20 o superior
-- [pnpm](https://pnpm.io/)
+> 💡 **¿Sin navegador?** `penfold tui` abre un dashboard interactivo de terminal
+> (workflows, agentes, runs y eventos en vivo). Habla directamente con los
+> services: no necesita servidor HTTP ni token. La UI web sigue siendo la
+> interfaz principal.
 
 ## Instalación
 
+Requisitos: **Python 3.11+** y [uv](https://docs.astral.sh/uv/). Para la UI web
+también hacen falta **Node 20+** y [pnpm](https://pnpm.io/). Para la TUI solo
+hace falta Python.
+
 ```bash
-# Backend y CLI
+# Backend, CLI y TUI
 uv sync --extra dev
 uv run penfold --help
 
-# Frontend (la UI se sirve desde el servidor local)
-cd web
-pnpm install
-pnpm build
-cd ..
+# Frontend (la UI la sirve el servidor local)
+cd web && pnpm install && pnpm build && cd ..
 ```
 
 ## Inicio rápido
 
 ```bash
 uv run penfold init      # crea .orchestrator/ con config, agentes y workflows
-uv run penfold doctor    # comprueba entorno, puertos y consistencia
-uv run penfold start     # arranca el servidor en 127.0.0.1:8765
+uv run penfold doctor    # comprueba entorno, dependencias y puerto
+uv run penfold start     # arranca en 127.0.0.1:8765 e imprime URL + token
 ```
 
-Al arrancar, el servidor **imprime el token de acceso en la terminal**. Abre la
-URL que se indica; la UI guarda el token en `localStorage` para no pedirlo en
-cada recarga. El token también se conserva con permisos `0600` en
-`.orchestrator/state/server.token` y se reutiliza en arranques posteriores. En
-otra terminal puedes verificar el servicio con `GET /api/health`.
+Abre la URL que aparece en la terminal. La UI guarda el token en
+`localStorage`; el token también se conserva con permisos `0600` en
+`.orchestrator/state/server.token`. Comprueba el servicio con
+`GET /api/health`.
 
-Guía completa: [docs/user-guide/GETTING_STARTED.md](docs/user-guide/GETTING_STARTED.md).
+Prefieres la terminal:
 
-## Comandos CLI principales
+```bash
+uv run penfold tui
+```
+
+Guía completa: [Getting started](docs/user-guide/GETTING_STARTED.md).
+
+## Comandos
 
 | Comando | Qué hace |
 |---|---|
-| `penfold init` | Inicializa `.orchestrator/` en el repositorio de usuario. |
+| `penfold init` | Inicializa `.orchestrator/` en el proyecto actual. |
 | `penfold doctor` | Diagnostica instalación, configuración y estado local. |
-| `penfold start` | Arranca el servidor local y muestra URL y token. |
-| `penfold run <workflow>` | Ejecuta un workflow desde la CLI (`-i clave=valor`, `--watch`). |
-| `penfold runs` / `inspect <id>` / `logs <id>` | Lista y examina ejecuciones y eventos. |
-| `penfold cancel <id>` / `resume <id>` | Cancela o reanuda un run. |
-| `penfold workflow list` / `validate <id>` | Lista y valida definiciones YAML. |
+| `penfold start` | Arranca el servidor local y abre la UI web. |
+| `penfold tui` | Abre el dashboard interactivo de terminal. |
+| `penfold run <workflow> -i clave=valor --watch` | Ejecuta un workflow desde la CLI. |
+| `penfold runs` · `inspect <id>` · `logs <id> -f` | Lista y examina ejecuciones y eventos. |
+| `penfold cancel <id>` · `resume <id>` | Cancela o reanuda un run desde su checkpoint. |
+| `penfold workflow list` · `validate <id>` | Lista y valida definiciones YAML. |
 | `penfold agent list` | Lista los agentes configurados. |
 
-`penfold --help` es la fuente autoritativa de lo que ya está disponible en cada
-momento.
-
-## Estructura de persistencia
-
-```
-.orchestrator/
-├── config.yaml              # configuración del proyecto (sin secretos)
-├── agents/*.yaml            # definiciones de agentes
-├── workflows/*.yaml         # definiciones de workflows (editables en la UI)
-├── state/penfold.db         # SQLite: runs, node_states, events, approvals
-├── runs/                    # datos/payloads por run
-└── artifacts/               # artefactos generados
-```
-
-Solo se versionan `config.yaml`, `agents/` y `workflows/`; `state/`, `runs/` y
-`artifacts/` se ignoran en Git. Detalles: [DATA_MODEL.md](DATA_MODEL.md).
+`penfold --help` es la fuente autoritativa de lo disponible en cada momento.
 
 ## Ejemplo mínimo
 
-Agente — `.orchestrator/agents/product-analyst.yaml` (simplificado; el esquema
-completo está en [API_CONTRACT.md](docs/development/API_CONTRACT.md)):
+Un agente simulado y un flujo `Input → Agent → Output`:
+
+<details>
+<summary>📄 <code>.orchestrator/agents/product-analyst.yaml</code></summary>
 
 ```yaml
 schema_version: 1
@@ -152,8 +159,7 @@ id: product-analyst
 name: Product Analyst
 description: Analiza requisitos y propone criterios de aceptación.
 role: analyst
-instructions: >
-  Convierte la petición del usuario en criterios de aceptación claros.
+instructions: Convierte la petición en criterios de aceptación claros.
 runtime:
   type: mock
   provider: null
@@ -184,7 +190,10 @@ mock:
     summary: "Criterios de aceptación generados (simulado)."
 ```
 
-Workflow — `.orchestrator/workflows/hello.yaml`:
+</details>
+
+<details>
+<summary>📄 <code>.orchestrator/workflows/hello.yaml</code></summary>
 
 ```yaml
 schema_version: 1
@@ -223,40 +232,72 @@ edges:
   - { id: e2, source: analyst, target: end }
 ```
 
-Cómo ejecutarlo: abre la UI, selecciona el workflow **Hola Penfold**, introduce
-`request` y pulsa *Ejecutar*. Alternativamente, `POST /api/runs` con
-`{"workflow_id": "hello", "inputs": {"request": "..."}}` y sigue el progreso
-por `GET /api/runs/{id}/stream`. Los detalles de mapeos y validación están en
-[WORKFLOW_SCHEMA.md](WORKFLOW_SCHEMA.md); más casos en
-[docs/user-guide/EXAMPLES.md](docs/user-guide/EXAMPLES.md).
+</details>
 
-## Estado del MVP (0.1) y limitaciones conocidas
+Ejecútalo desde la UI (selecciona **Hola Penfold**, rellena `request` y pulsa
+*Ejecutar*), desde la terminal:
 
-**Alcance previsto del MVP**: nodos `input`, `agent`, `command`, `condition`,
-`approval` y `output`; `MockRuntime` y `CommandRuntime`; persistencia SQLite;
-eventos SSE con reconexión por `after`; edición visual que **escribe YAML**;
-autorizaciones humanas; token local.
+```bash
+uv run penfold run hello -i request="Añadir login" --watch
+```
 
-**Todavía NO incluye**:
+o con `POST /api/runs` y siguiendo `GET /api/runs/{id}/stream`. Los mapeos
+`$inputs` y `$nodes` son cadenas declarativas: nunca se evalúa código
+([WORKFLOW_SCHEMA.md](WORKFLOW_SCHEMA.md),
+[ejemplos](docs/user-guide/EXAMPLES.md)).
 
-- LangGraph: el motor es un protocolo propio `ExecutionEngine` (ver
-  [ADR-0002](docs/architecture/adr/0002-execution-engine-protocol.md)).
-- Docker ni ningún tipo de contenedor/aislamiento.
-- Nube, multiusuario, autenticación externa ni sincronización entre máquinas.
-- Integraciones específicas con CLIs de IA (ni detección automática de sus
-  opciones).
-- Worktree aislado por run (se estudia como evolución futura).
-- `AgentRuntime` para proveedores remotos más allá de `mock` y `command`.
+## Persistencia
 
-**Estado de implementación**: MVP 0.1 en desarrollo; Fases 0 y 1 en curso (ver
-[ROADMAP.md](ROADMAP.md)). Las capacidades descritas arriba definen el contrato
-objetivo; consulta el estado de cada fase antes de darlas por terminadas.
+```text
+.orchestrator/
+├── config.yaml              # configuración del proyecto (sin secretos)
+├── agents/*.yaml            # definiciones de agentes
+├── workflows/*.yaml         # definiciones de workflows (editables en la UI)
+├── state/penfold.db         # SQLite: runs, node_states, events, approvals
+├── runs/                    # payloads por run
+└── artifacts/               # artefactos generados
+```
 
-## Contribuir
+Solo se versionan `config.yaml`, `agents/` y `workflows/`. Detalles:
+[DATA_MODEL.md](docs/DATA_MODEL.md).
 
-Lee [CONTRIBUTING.md](CONTRIBUTING.md) para el entorno (`uv` + `pnpm`), estilo
-(`ruff`, línea 100), tests (`pytest`, `vitest`) y el procedimiento de ADRs. Para
-extender el sistema: [docs/development/EXTENDING.md](docs/development/EXTENDING.md).
+## Estado del MVP
+
+**Fases 0–6 implementadas y verificadas** (fundación, config, validación,
+motor, runtimes, servidor/SSE y editor visual). **Fase 7 en curso**: ejemplos,
+demo y tests ya funcionan; quedan CI, retención y revisión de seguridad final
+([ROADMAP.md](ROADMAP.md)).
+
+Todavía **no** incluye: LangGraph, Docker o contenedores, nube/multiusuario,
+integraciones concretas con CLIs de IA, worktrees aislados por run ni runtimes
+remotos más allá de `mock` y `command`.
+
+## Desarrollo
+
+```bash
+uv run pytest                       # backend
+uv run ruff check .                 # lint (E, F, I, UP; línea 100)
+uv run ruff format --check .        # formato
+cd web && pnpm test && pnpm build   # frontend
+```
+
+El build de la UI se guarda una sola vez en el repo,
+`apps/server/static/`; el wheel genera `penfold/static` desde ahí al
+construirse ([ADR-0007](docs/architecture/adr/0007-single-static-build.md)).
+Si cambias la UI, recompila y sincroniza esa carpeta.
+
+## Documentación
+
+- [Especificación del proyecto](docs/PROJECT_SPEC.md) ·
+  [Arquitectura](docs/ARCHITECTURE.md) · [ADRs](docs/architecture/adr/)
+- [Contrato HTTP](docs/development/API_CONTRACT.md) ·
+  [Modelo de datos](docs/DATA_MODEL.md) ·
+  [Cómo extender](docs/development/EXTENDING.md)
+- [Primeros pasos](docs/user-guide/GETTING_STARTED.md) ·
+  [Ejemplos](docs/user-guide/EXAMPLES.md) ·
+  [Esquema de workflows](WORKFLOW_SCHEMA.md)
+- [Seguridad](SECURITY.md) · [Contribuir](docs/CONTRIBUTING.md) ·
+  [Roadmap](ROADMAP.md)
 
 ## Licencia
 

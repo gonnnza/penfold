@@ -57,22 +57,22 @@ cd web && pnpm test:e2e             # Playwright
 
 | Zona | Contenido |
 |---|---|
-| `src/penfold/cli/` | Typer + Rich: `init`, `doctor`, `start`, `run`, `runs`, `inspect`, `logs`, `cancel`, `resume`, grupos `workflow`/`agent`. |
-| `src/penfold/server/` | FastAPI: `/api/health`, `/api/config`, `/api/workflows`, `/api/agents`, `/api/runs`, `/api/artifacts`, SSE `/api/runs/{id}/stream`. |
-| `src/penfold/execution/` | `ExecutionEngine` propio: `engine`, `manager`, `models`, `context`, `events`, `repository`, `approval`. |
-| `src/penfold/workflows/` | Modelos Pydantic, store YAML, plantillas, validador de grafo. |
-| `src/penfold/agents/` | Modelos, store YAML, plantillas. |
-| `src/penfold/runtimes/` | `base` (protocolo `AgentRuntime`), `mock`, `command`, `registry`, `secrets`. |
-| `src/penfold/config/` | `paths` (localiza `.orchestrator/` y el build del frontend), modelos. |
+| `src/penfold/models/` | **MODEL**: solo declaración de clases Pydantic/enums (`workflow`, `agent`, `execution`, `config`, `runtime`). Sin lógica. |
+| `src/penfold/services/` | **SERVICE**: toda la lógica de negocio (`engine`, `manager`, `validator`, `repository`, `stores`, `templates`, `approval`, `context`, `events`, `runtimes/`). |
+| `src/penfold/views/` | **VIEW**: endpoints FastAPI, SSE y middleware de token (`app.py`, `auth.py`). 23 rutas. |
+| `src/penfold/tui/` | **TUI**: dashboard Rich de terminal (`penfold tui`). Llama a services en proceso, sin HTTP ni token. |
+| `src/penfold/cli/` | Typer + Rich: `init`, `doctor`, `start`, `tui`, `run`, `runs`, `inspect`, `logs`, `cancel`, `resume`, grupos `workflow`/`agent`. Adaptador de entrada. |
+| `src/penfold/config/paths.py` | Infraestructura: localiza `.orchestrator/` y el build del frontend. |
+| `src/penfold/utils.py` | Utilidades puras compartidas (`utcnow`), neutras entre capas. |
 | `src/penfold/integrations/git.py` | Helper Git no destructivo; **no conectado al motor** en 0.1. |
 | `web/src/` | React 19 + TS + Vite + `@xyflow/react` + zustand + lucide. |
 | `tests/` | pytest + httpx + pytest-asyncio. `web/src/*.test.ts` Vitest, `web/e2e/` Playwright. |
 | `examples/` | `simple`, `feature-development`, `approval-demo`, agentes de ejemplo. |
 
-Build del frontend: `web/dist`, con copias en `apps/server/static/` y
-`src/penfold/static/`. `config/paths.py::static_dir` busca en ese orden. Si
-cambias la UI, **recompila** con `cd web && pnpm build` y sincroniza las copias
-que corresponda.
+Build del frontend: `web/dist` (ignorado por Git) y **una sola copia
+versionada** en `apps/server/static/`. Hatchling genera `penfold/static` dentro
+del wheel desde esa copia mediante `force-include` (ADR-0007). Si cambias la UI,
+**recompila** con `cd web && pnpm build` y sincroniza `apps/server/static/`.
 
 ## 4. Reglas de oro (invariantes)
 
@@ -102,6 +102,10 @@ que corresponda.
    español.
 10. **Un solo paquete Python** `penfold` con submódulos. No crear nuevos
     paquetes distribuibles sin ADR (ADR-0001).
+11. **Patrón MVC estricto (ADR-0006).** `models/` = solo declaración de clases;
+    `services/` = toda la lógica de negocio; `views/` = endpoints HTTP. Nunca
+    pongas lógica en un modelo ni abras endpoints desde un service. La CLI y la
+    TUI son otros adaptadores que llaman a `services/`, igual que `views/`.
 
 ## 5. Convenciones de estilo
 
@@ -155,3 +159,6 @@ que corresponda.
 |---|---|---|
 | 2026-11-23 | Creación inicial de `AGENTS.md` y `skills.md` a partir del estado del repo (Fases 0–6 hechas, Fase 7 en curso). | — |
 | 2026-11-23 | Ajuste de rutas de documentación a `docs/` y corrección de la nota sobre los ADR. | — |
+| 2026-11-23 | Refactor a MVC: `models/` (solo clases), `services/` (lógica), `views/` (endpoints). ADR-0006. 33 tests pasan. | — |
+| 2026-11-23 | Dashboard Rich de terminal (`penfold tui`, capa `tui/`). 35 tests pasan. | — |
+| 2026-11-23 | Eliminada la copia duplicada `src/penfold/static/`; el wheel genera `penfold/static` desde `apps/server/static` con `force-include`. ADR-0007. | — |

@@ -36,6 +36,8 @@ Formato de cada entrada:
 | [`recompilar-ui`](#recompilar-ui) | validado | 2026-11-23 |
 | [`depurar-un-run`](#depurar-un-run) | validado | 2026-11-23 |
 | [`escribir-un-adr`](#escribir-un-adr) | validado | 2026-11-23 |
+| [`anadir-endpoint-mvc`](#anadir-endpoint-mvc) | validado | 2026-11-23 |
+| [`usar-dashboard-terminal`](#usar-dashboard-terminal) | validado | 2026-11-23 |
 
 ---
 
@@ -78,9 +80,9 @@ salida (`$nodes.<id>.output`).
 1. Define la forma YAML: añade el valor a `NodeType` y las claves de `config`
    en la tabla de nodos de `docs/development/API_CONTRACT.md`; documenta los
    campos en `WORKFLOW_SCHEMA.md`.
-2. Registra las reglas de validación en `src/penfold/workflows/` (ids, campos
+2. Registra las reglas de validación en `src/penfold/services/` (ids, campos
    obligatorios, referencias). Todo error lleva `path` y severidad.
-3. Implementa el ejecutor en `src/penfold/execution/`: resuelve `config.inputs`
+3. Implementa el ejecutor en `src/penfold/services/`: resuelve `config.inputs`
    con mapeos, emite eventos antes/después, actualiza `NodeState`
    (`pending → ready → running → succeeded|failed`), respeta timeout, reintentos
    y cancelación.
@@ -111,7 +113,7 @@ contrato de salida JSON Schema.
 
 **Pasos:**
 1. Implementa `AgentRuntime` (`execute` / `validate` / `healthcheck`) en
-   `src/penfold/runtimes/base.py` y regístralo en `registry.py` por
+   `src/penfold/services/runtimes/base.py` y regístralo en `registry.py` por
    `runtime.type`. Contrato estable: comprueba siempre el código antes de
    programar contra él (`RuntimeContext`, `RuntimeResult`).
 2. `validate()`: comprueba `runtime.type`, `command`, `args` y `outputs`.
@@ -148,7 +150,7 @@ a `NodeState.simulated`.
 1. Edita **primero** `docs/development/API_CONTRACT.md` (fuente de verdad).
 2. Actualiza los modelos Pydantic en
    `src/penfold/{workflows,agents,execution}/models.py` y los handlers en
-   `src/penfold/server/app.py`.
+   `src/penfold/views/app.py`.
 3. Ajusta el cliente `web/src/api.ts` y los tipos `web/src/types.ts`.
 4. Actualiza tests de API (`tests/test_api.py`) y de frontend
    (`web/src/api.test.ts`).
@@ -199,18 +201,18 @@ la UI desde el paquete instalado.
 
 **Pasos:**
 1. `cd web && pnpm build` (ejecuta `tsc --noEmit && vite build`).
-2. Sincroniza el build con las copias que sirve el servidor:
-   `apps/server/static/` y `src/penfold/static/` (ver
-   `config/paths.py::static_dir`, que busca en ese orden).
+2. Sincroniza el build con la copia que sirve el servidor:
+   `apps/server/static/` (ADR-0007). El wheel genera `penfold/static` desde
+   ahí con `force-include`; no edites esa ruta a mano.
 3. `uv run penfold start` y abre la URL que imprime; el token está en la
    terminal y en `.orchestrator/state/server.token`.
 
 **Verificación:** la UI carga, `GET /api/health` responde y el workflow de
 ejemplo se ve en el editor.
 
-**Trampas:** el build está duplicado en tres rutas; cambiar solo `web/dist` no
-actualiza lo que sirve una instalación. Para desarrollo rápido, `pnpm dev` usa
-Vite directamente.
+**Trampas:** cambiar solo `web/dist` no actualiza lo que sirve una instalación;
+hay que copiarlo a `apps/server/static` y reconstruir el wheel. Para desarrollo
+rápido, `pnpm dev` usa Vite directamente.
 
 **Última práctica:** 2026-11-23 — creación de la skill.
 
@@ -270,12 +272,84 @@ documentación (parte de ella se reubicó en `docs/`).
 
 ---
 
+## anadir-endpoint-mvc
+
+**Estado:** validado
+**Cuándo usarla:** al añadir o modificar un endpoint HTTP, o cualquier regla de
+negocio, bajo el patrón MVC de [ADR-0006](docs/architecture/adr/0006-mvc-layering.md).
+
+**Entrada:** contrato del endpoint (método, ruta, request/response) y regla de
+negocio que debe ejecutar.
+
+**Pasos:**
+1. **Model** (`src/penfold/models/`): declara la clase Pydantic del request y de
+   la response. Solo declaración: campos, `Field`, validadores de clase. Nada de
+   lógica ni de acceso a disco. Si necesitas `utcnow`, impórtalo de
+   `penfold.utils`.
+2. **Service** (`src/penfold/services/`): implementa la regla de negocio como
+   función o método de un service existente (`manager.py`, `engine.py`,
+   `validator.py`, stores…). Nunca importes FastAPI aquí.
+3. **View** (`src/penfold/views/app.py`): añade el endpoint con `@app.*`, llama
+   al service y devuelve `model_dump(mode="json")`. Sin reglas de negocio en el
+   handler.
+4. Si el cambio afecta al contrato, edita primero
+   `docs/development/API_CONTRACT.md` (skill `cambiar-contrato-http`).
+5. Ajusta `web/src/api.ts` y `web/src/types.ts` si la UI lo consume.
+6. Tests: `tests/test_api.py` con `httpx` contra `create_app`.
+
+**Verificación:** `uv run pytest tests/test_api.py` + `uv run ruff check .` +
+`cd web && pnpm build` si tocó el cliente.
+
+**Trampas:** dependencias permitidas solo `views → services → models → utils`.
+Un model que importa services, o un view con lógica, rompe el patrón. Los 23
+endpoints viven en `views/app.py`; la CLI es otro adaptador que llama a los
+mismos services.
+
+**Última práctica:** 2026-11-23 — refactor completo a MVC (33 tests pasan).
+
+---
+
+## usar-dashboard-terminal
+
+**Estado:** validado
+**Cuándo usarla:** para ejecutar y supervisar workflows desde la terminal, sin
+arrancar el servidor ni abrir el navegador.
+
+**Entrada:** proyecto inicializado (`penfold init`).
+
+**Pasos:**
+1. `uv run penfold tui`. Requiere `.orchestrator/` en el cwd o en un padre.
+2. Menú principal: `[1]` tabla de workflows, `[2]` ejecutar, `[3]` historial de
+   runs (detalle / cancelar / reanudar), `[4]` agentes, `[0]` salir.
+3. Al ejecutar, se muestran las entradas declaradas con sus valores por defecto;
+   acepta Enter para usarlos.
+4. Durante la ejecución se actualizan en vivo el estado de los nodos y los
+   eventos. Si aparece un nodo `approval`, elige `approve`, `reject`, `modify`
+   (datos JSON) o `cancel`.
+5. Al terminar se imprime el panel con estado y salidas.
+
+**Verificación:** prueba rápida no interactiva:
+`printf '1\n\n0\n' | uv run penfold tui` debe mostrar la tabla de workflows.
+
+**Trampas:** los prompts corren en un hilo (`asyncio.to_thread`) para no
+bloquear el event loop del motor. La TUI usa `manager.gate` (QueueApprovalGate),
+así que las aprobaciones se resuelven con `manager.approve`, igual que la API.
+No es un editor de grafos: para crear workflows usa la UI web o edita el YAML.
+
+**Última práctica:** 2026-11-23 — smoke test de ejecución completa del workflow
+`simple` desde la TUI.
+
+---
+
 ## Registro de cambios
 
 | Fecha | Cambio | Nota |
 |---|---|---|
 | 2026-11-23 | Creación inicial con 8 skills semilla derivadas del estado del repo. | Fases 0–6 hechas; Fase 7 en curso. |
 | 2026-11-23 | Corrección de rutas a `docs/` y de enlaces internos del índice. | — |
+| 2026-11-23 | Refactor a MVC; rutas de `skills.md` actualizadas y añadida `anadir-endpoint-mvc`. | ADR-0006 |
+| 2026-11-23 | Añadida `usar-dashboard-terminal` tras implementar `penfold tui`. | — |
+| 2026-11-23 | Actualizada `recompilar-ui`: una sola copia versionada del build (ADR-0007). | — |
 
 > Si quieres convertir alguna de estas skills en una skill real de OpenCode,
 > muévela a `.opencode/skills/<nombre>/SKILL.md` con frontmatter `name` y

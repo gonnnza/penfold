@@ -49,9 +49,27 @@ de los nodos en pantalla.
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-Módulos previstos bajo `src/penfold/`: `cli/`, `server/`, `execution/`,
-`workflows/`, `agents/`, `runtimes/`, `config/`, `integrations/` (ver
-[ADR-0001](docs/architecture/adr/0001-single-python-package.md)).
+Módulos bajo `src/penfold/`: `models/`, `services/`, `views/`, `cli/`, `config/`,
+`integrations/`, `utils.py` (ver [ADR-0001](architecture/adr/0001-single-python-package.md)
+y [ADR-0006](architecture/adr/0006-mvc-layering.md)).
+
+## Patrón MVC (capas Model / Service / View)
+
+Desde 0.1 el backend sigue un **MVC estricto** ([ADR-0006](architecture/adr/0006-mvc-layering.md)):
+
+| Capa | Paquete | Contenido | Regla |
+|---|---|---|---|
+| **Model** | `src/penfold/models/` | Clases Pydantic, enums y alias de tipos (`workflow`, `agent`, `execution`, `config`, `runtime`). | **Solo declaración de clases.** Sin lógica de negocio, sin disco, sin HTTP. |
+| **Service** | `src/penfold/services/` | Motor (`engine`), ciclo de vida (`manager`), validación, repositorio, stores, plantillas, runtimes y utilidades de dominio. | **Toda la lógica de negocio vive aquí.** No abre endpoints. |
+| **View** | `src/penfold/views/` | Endpoints FastAPI (`app.py`), SSE y middleware de token (`auth.py`). | **Solo transporte.** Delega en services y serializa models. |
+
+La CLI (`src/penfold/cli/`) es un **adaptador de entrada** equivalente a la
+view: llama a los mismos services, no contiene lógica de negocio. Las
+utilidades puras compartidas (p. ej. `utcnow`) viven en `utils.py` para que
+ni models ni services dependan el uno del otro en dirección inversa.
+
+Dependencias permitidas: `views/ → services/ → models/ → utils.py`. La
+dirección contraria está prohibida.
 
 ## Separación definición visual / ejecución
 
@@ -86,13 +104,15 @@ YAML, lo muestra como grafo y vuelve a serializarlo al guardar.
 
 | Decisión | Rationale | Detalle |
 |---|---|---|
-| Un único paquete Python `penfold` con submódulos | Simplicidad de desarrollo e importación | [ADR-0001](docs/architecture/adr/0001-single-python-package.md) |
-| `ExecutionEngine` propio, sin LangGraph | Control total sobre checkpoints, cancelación y mapeos; LangGraph no aporta valor suficiente en 0.1 | [ADR-0002](docs/architecture/adr/0002-execution-engine-protocol.md) |
-| YAML versionado como fuente de la verdad | Legible, revisable en Git, sin base de datos propietaria para la definición | [ADR-0003](docs/architecture/adr/0003-yaml-workflow-format.md) |
-| SQLite local | Cero operaciones, reanudación y auditoría en la misma máquina | [ADR-0004](docs/architecture/adr/0004-sqlite-local-persistence.md) |
-| Token local + localhost | Seguridad mínima suficiente para un servicio de usuario único | [ADR-0005](docs/architecture/adr/0005-local-token-auth.md) |
-| Dominio separado del transporte HTTP | Las mismas entidades se usan en CLI, motor y API | [API_CONTRACT.md](docs/development/API_CONTRACT.md) |
-| Sin shell en comandos | Evita inyección; `shlex.split` y lista de argumentos | [SECURITY.md](SECURITY.md) |
+| Un único paquete Python `penfold` con submódulos | Simplicidad de desarrollo e importación | [ADR-0001](architecture/adr/0001-single-python-package.md) |
+| MVC estricto: models / services / views | roles y dependencias unidireccionales explícitos | [ADR-0006](architecture/adr/0006-mvc-layering.md) |
+| `ExecutionEngine` propio, sin LangGraph | Control total sobre checkpoints, cancelación y mapeos; LangGraph no aporta valor suficiente en 0.1 | [ADR-0002](architecture/adr/0002-execution-engine-protocol.md) |
+| YAML versionado como fuente de la verdad | Legible, revisable en Git, sin base de datos propietaria para la definición | [ADR-0003](architecture/adr/0003-yaml-workflow-format.md) |
+| SQLite local | Cero operaciones, reanudación y auditoría en la misma máquina | [ADR-0004](architecture/adr/0004-sqlite-local-persistence.md) |
+| Token local + localhost | Seguridad mínima suficiente para un servicio de usuario único | [ADR-0005](architecture/adr/0005-local-token-auth.md) |
+| Una sola copia versionada del build de la UI | Evita copias desincronizadas; el wheel se genera desde `apps/server/static` | [ADR-0007](architecture/adr/0007-single-static-build.md) |
+| Dominio separado del transporte HTTP | Las mismas entidades se usan en CLI, motor y API | [API_CONTRACT.md](development/API_CONTRACT.md) |
+| Sin shell en comandos | Evita inyección; `shlex.split` y lista de argumentos | [SECURITY.md](../SECURITY.md) |
 
 ## Flujo de una ejecución
 
@@ -144,7 +164,7 @@ Esto es una **declaración de intenciones** que el motor respeta al construir el
 contexto y al decidir qué pasos puede ejecutar. **No es un sandbox**: un
 `CommandRuntime` se ejecuta con los permisos del proceso de Penfold. Las
 autorizaciones humanas (`approval`) y la auditoría en `events` complementan el
-modelo. Ver [SECURITY.md](SECURITY.md).
+modelo. Ver [SECURITY.md](../SECURITY.md).
 
 ## Aislamiento con worktrees (evolución futura)
 
@@ -161,6 +181,6 @@ limpieza, conflictos y artefactos (registrar un ADR nuevo).
 
 - [PROJECT_SPEC.md](PROJECT_SPEC.md)
 - [DATA_MODEL.md](DATA_MODEL.md)
-- [WORKFLOW_SCHEMA.md](WORKFLOW_SCHEMA.md)
-- [SECURITY.md](SECURITY.md)
-- [ADRs](docs/architecture/adr/)
+- [WORKFLOW_SCHEMA.md](../WORKFLOW_SCHEMA.md)
+- [SECURITY.md](../SECURITY.md)
+- [ADRs](architecture/adr/)
