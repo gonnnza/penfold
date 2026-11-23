@@ -38,6 +38,7 @@ Formato de cada entrada:
 | [`anadir-endpoint-mvc`](#anadir-endpoint-mvc) | validado | 2026-11-23 |
 | [`usar-dashboard-terminal`](#usar-dashboard-terminal) | validado | 2026-11-23 |
 | [`usar-desde-cualquier-carpeta`](#usar-desde-cualquier-carpeta) | validado | 2026-11-23 |
+| [`editar-workflow-terminal`](#editar-workflow-terminal) | validado | 2026-11-23 |
 
 ---
 
@@ -346,6 +347,42 @@ desde `/tmp/opencode/electrolux` y desde `/tmp` con `--project`.
 
 ---
 
+## editar-workflow-terminal
+
+**Estado:** validado
+**Cuándo usarla:** para crear o modificar workflows sin la UI web (que fue
+eliminada). Toda la mutación vive en `WorkflowEditor` (`services/`).
+
+**Entrada:** id del workflow y la operación deseada.
+
+**Pasos:**
+1. Crear: `penfold workflow new <id> --name "Nombre"` (genera `start → end`).
+2. Declarar entradas: `penfold workflow add-input <id> <nombre> --type string`.
+3. Añadir nodos: `penfold workflow add-node <id> <nodo> <tipo> [--agent ...]`.
+   Los tipos son `input|agent|command|condition|approval|output`.
+4. Conectar: `penfold workflow connect <id> <origen> <destino> [--handle pass|fail] [--loop --max-iterations N]`.
+5. Configurar: `penfold workflow set <id> <nodo> <clave> <valor>`. El valor se
+   interpretará como JSON si es posible; si no, se guarda como texto. Para un
+   agente: `penfold workflow set <id> analyst inputs '{"request": "$inputs.request"}'`.
+   Para un comando: `penfold workflow set <id> tests command 'python -m pytest'`.
+6. Borrar: `penfold workflow rm-node <id> <nodo>` (quita también sus aristas)
+   o `penfold workflow rm-edge <id> <eN>`.
+7. Verificar: `penfold workflow validate <id>` y `penfold workflow diagram <id>`.
+8. En la TUI, la opción `[6] Editar` ofrece las mismas operaciones con prompts.
+
+**Verificación:** el YAML resultante está en
+`.orchestrator/workflows/<id>.yaml` con `schema_version: 1`; `validate` pasa y
+`penfold run <id>` termina. Cada comando redibuja el grafo.
+
+**Trampas:** `set` sobre `config.inputs` requiere un objeto JSON, no una cadena.
+Los ids de nodo/entrada/arista son únicos (el modelo lo valida al guardar).
+`position` se genera automáticamente y el motor lo ignora.
+
+**Última práctica:** 2026-11-23 — creación y ejecución de un workflow desde cero
+con comandos `workflow new/add-node/connect/set`, validado y ejecutado.
+
+---
+
 ## Registro de cambios
 
 | Fecha | Cambio | Nota |
@@ -358,6 +395,7 @@ desde `/tmp/opencode/electrolux` y desde `/tmp` con `--project`.
 | 2026-11-23 | Git dividido en MVC; `anadir-endpoint-mvc` documenta la CLI/TUI como vistas con `penfold git` de ejemplo. | — |
 | 2026-11-23 | Añadida `usar-desde-cualquier-carpeta` (opción global `--project`). | — |
 | 2026-11-23 | `usar-desde-cualquier-carpeta` documenta el atajo `penfold .`. | — |
+| 2026-11-23 | Añadida `editar-workflow-terminal` para crear y modificar grafos sin UI web. | — |
 
 > Si quieres convertir alguna de estas skills en una skill real de OpenCode,
 > muévela a `.opencode/skills/<nombre>/SKILL.md` con frontmatter `name` y

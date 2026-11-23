@@ -157,8 +157,24 @@ uv run penfold tui       # abre el dashboard interactivo de terminal
 ```
 
 En la TUI puedes listar workflows (`[1]`), ejecutar (`[2]`), consultar el
-historial de runs (`[3]`) y ver agentes (`[4]`). Los eventos y los estados de
+historial de runs (`[3]`), ver agentes (`[4]`), dibujar el grafo (`[5]`) y
+**editar workflows** (`[6]`) de forma interactiva. Los eventos y los estados de
 los nodos se actualizan en vivo; si aparece un nodo `approval`, tú decides.
+
+Para construir un workflow sin la TUI:
+
+```bash
+penfold workflow new mi-flujo --name "Mi flujo"
+penfold workflow add-input mi-flujo request --type string
+penfold workflow add-node mi-flujo analyst agent --agent product-analyst
+penfold workflow connect mi-flujo start analyst
+penfold workflow set mi-flujo analyst inputs '{"request": "$inputs.request"}'
+penfold workflow connect mi-flujo analyst end
+penfold workflow validate mi-flujo
+penfold workflow diagram mi-flujo
+```
+
+Cada cambio guarda `.orchestrator/workflows/<id>.yaml` y redibuja el grafo.
 
 Si necesitas la API: `uv run penfold start` arranca en `127.0.0.1:8765` e
 imprime URL y token. El token también se conserva con permisos `0600` en
@@ -181,6 +197,12 @@ Guía completa: [Getting started](docs/user-guide/GETTING_STARTED.md).
 | `penfold cancel <id>` · `resume <id>` | Cancela o reanuda un run desde su checkpoint. |
 | `penfold workflow list` · `validate <id>` | Lista y valida definiciones YAML. |
 | `penfold workflow diagram <id>` | Dibuja el grafo del workflow en la terminal (nodos, ramas y bucles). |
+| `penfold workflow new <id>` | Crea un workflow con nodos Input y Output conectados. |
+| `penfold workflow add-node <id> <nodo> <tipo>` | Añade un nodo (`--agent` para nodos `agent`). |
+| `penfold workflow connect <id> <origen> <destino>` | Conecta nodos (`--handle`, `--loop`, `--max-iterations`). |
+| `penfold workflow set <id> <nodo> <clave> <valor>` | Asigna configuración a un nodo (acepta JSON). |
+| `penfold workflow add-input <id> <nombre>` | Declara una entrada del workflow. |
+| `penfold workflow rm-node` · `rm-edge` | Borra nodos o aristas. |
 | `penfold agent list` | Lista los agentes configurados. |
 | `penfold git status` · `diff` · `worktrees` | Consulta el repositorio Git local. |
 
