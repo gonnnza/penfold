@@ -28,6 +28,7 @@ from penfold.services.agent_store import AgentStore
 from penfold.services.events import EventBus
 from penfold.services.manager import RunManager
 from penfold.services.repository import RunRepository
+from penfold.services.workflow_editor import WorkflowEditor
 from penfold.services.workflow_store import WorkflowStore
 from penfold.tui.diagram import build_diagram
 
@@ -331,6 +332,96 @@ async def _runs_menu(
             console.print(f"[red]Error:[/red] {exc}")
 
 
+async def _edit_menu(workflows: WorkflowStore) -> None:
+    """Editor interactivo de workflows: crea nodos, aristas y configura."""
+    editor = WorkflowEditor(workflows)
+    node_types = ["input", "agent", "command", "condition", "approval", "output"]
+
+    while True:
+        _header("Editar workflow")
+        console.print(render_workflows_table(workflows.list()))
+        choice = await ask(
+            "[1] Nuevo  [2] Añadir nodo  [3] Conectar  [4] Configurar  "
+            "[5] Añadir entrada  [6] Borrar  [0] Volver",
+            default="0",
+        )
+        if choice == "0":
+            return
+
+        try:
+            if choice == "1":
+                workflow_id = await ask("ID del nuevo workflow:", default="")
+                name = await ask("Nombre:", default=workflow_id)
+                definition = editor.create(workflow_id, name=name or None)
+            else:
+                workflow_id = await ask("ID del workflow:", default="")
+                if not workflow_id:
+                    continue
+                if choice == "2":
+                    node_id = await ask("ID del nodo:", default="")
+                    node_type = await ask("Tipo:", choices=node_types)
+                    label = await ask("Etiqueta:", default="")
+                    agent = await ask("Agente:", default="") if node_type == "agent" else None
+                    definition = editor.add_node(
+                        workflow_id, node_id, node_type, label=label or None, agent=agent or None
+                    )
+                elif choice == "3":
+                    source = await ask("Nodo origen:", default="")
+                    target = await ask("Nodo destino:", default="")
+                    handle = await ask("Handle:", choices=["default", "pass", "fail"])
+                    loop = (await ask("¿Bucle?", choices=["no", "si"], default="no")) == "si"
+                    maximum = await ask("max_iterations (vacío = ninguno):", default="")
+                    definition = editor.connect(
+                        workflow_id,
+                        source,
+                        target,
+                        handle=handle,
+                        loop=loop,
+                        max_iterations=int(maximum) if maximum.isdigit() else None,
+                    )
+                elif choice == "4":
+                    node_id = await ask("ID del nodo:", default="")
+                    key = await ask("Clave de config:", default="")
+                    raw = await ask("Valor (JSON o texto):", default="")
+                    try:
+                        value = json.loads(raw)
+                    except json.JSONDecodeError:
+                        value = raw
+                    definition = editor.set_config(workflow_id, node_id, key, value)
+                elif choice == "5":
+                    input_id = await ask("Nombre de la entrada:", default="")
+                    input_type = await ask("Tipo:", default="string")
+                    answer = await ask("¿Obligatoria?", choices=["si", "no"], default="si")
+                    required = answer == "si"
+                    default = await ask("Valor por defecto (JSON o texto):", default="")
+                    try:
+                        parsed = json.loads(default) if default else None
+                    except json.JSONDecodeError:
+                        parsed = default
+                    definition = editor.add_input(
+                        workflow_id,
+                        input_id,
+                        input_type=input_type,
+                        required=required,
+                        default=parsed,
+                    )
+                elif choice == "6":
+                    kind = await ask("¿Nodo o arista?", choices=["nodo", "arista"])
+                    item_id = await ask("ID:", default="")
+                    definition = (
+                        editor.remove_node(workflow_id, item_id)
+                        if kind == "nodo"
+                        else editor.remove_edge(workflow_id, item_id)
+                    )
+                else:
+                    continue
+            console.print(f"[green]✓[/green] Guardado {definition.metadata.id}.yaml")
+            console.print(build_diagram(definition))
+        except (PenfoldError, ValueError) as exc:
+            console.print(f"[red]Error:[/red] {exc}")
+        await ask("Enter para continuar...", default="")
+
+
 async def _session(paths: ProjectPaths) -> None:
     config = paths.require_project()
     agents = AgentStore(paths)
@@ -348,7 +439,8 @@ async def _session(paths: ProjectPaths) -> None:
                 f"{len(workflows.list())}  [dim]Agentes:[/dim] {len(agents.list())}"
             )
             choice = await ask(
-                "[1] Workflows  [2] Ejecutar  [3] Runs  [4] Agentes  [5] Diagrama  [0] Salir",
+                "[1] Workflows  [2] Ejecutar  [3] Runs  [4] Agentes  "
+                "[5] Diagrama  [6] Editar  [0] Salir",
                 default="0",
             )
             if choice == "0":
@@ -374,6 +466,8 @@ async def _session(paths: ProjectPaths) -> None:
                     except PenfoldError as exc:
                         console.print(f"[red]Error:[/red] {exc}")
                 await ask("Enter para continuar...", default="")
+            elif choice == "6":
+                await _edit_menu(workflows)
     finally:
         for task in list(manager.tasks.values()):
             if not task.done():

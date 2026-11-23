@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib.util
+import json
 import socket
 import sys
 import threading
@@ -27,6 +28,7 @@ from penfold.services.git import GitService
 from penfold.services.manager import RunManager
 from penfold.services.repository import RunRepository
 from penfold.services.validator import validate_workflow
+from penfold.services.workflow_editor import WorkflowEditor
 from penfold.services.workflow_store import WorkflowStore
 from penfold.services.workflow_templates import install_default_workflows
 from penfold.tui import run_dashboard
@@ -441,6 +443,135 @@ def workflow_diagram(workflow_id: str = typer.Argument(..., help="ID del workflo
     except PenfoldError as exc:
         _fail(str(exc))
     console.print(build_diagram(definition))
+
+
+def _parse_value(raw: str | None) -> object:
+    """Interpreta JSON cuando puede; si no, deja la cadena tal cual."""
+    if raw is None:
+        return None
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return raw
+
+
+def _edit(workflow_id: str, action) -> None:
+    """Aplica una edición, muestra el resultado y deja el YAML guardado."""
+    _, _, _, workflows, *_ = _components()
+    try:
+        definition = action(WorkflowEditor(workflows))
+    except PenfoldError as exc:
+        _fail(str(exc))
+    console.print(
+        f"[green]✓[/green] Guardado .orchestrator/workflows/{definition.metadata.id}.yaml"
+    )
+    console.print(build_diagram(definition))
+
+
+@workflow_app.command("new")
+def workflow_new(
+    workflow_id: str = typer.Argument(..., help="ID del nuevo workflow."),
+    name: str | None = typer.Option(None, "--name", help="Nombre legible."),
+    description: str = typer.Option("", "--description", help="Descripción."),
+) -> None:
+    """Crear un workflow con nodos Input y Output ya conectados."""
+    _edit(
+        workflow_id,
+        lambda editor: editor.create(workflow_id, name=name, description=description),
+    )
+
+
+@workflow_app.command("add-node")
+def workflow_add_node(
+    workflow_id: str = typer.Argument(..., help="ID del workflow."),
+    node_id: str = typer.Argument(..., help="ID del nodo."),
+    node_type: str = typer.Argument(..., help="input|agent|command|condition|approval|output."),
+    label: str | None = typer.Option(None, "--label", help="Etiqueta visible."),
+    agent: str | None = typer.Option(None, "--agent", help="Agente (obligatorio si type=agent)."),
+) -> None:
+    """Añadir un nodo al grafo."""
+    _edit(
+        workflow_id,
+        lambda editor: editor.add_node(workflow_id, node_id, node_type, label=label, agent=agent),
+    )
+
+
+@workflow_app.command("connect")
+def workflow_connect(
+    workflow_id: str = typer.Argument(..., help="ID del workflow."),
+    source: str = typer.Argument(..., help="Nodo origen."),
+    target: str = typer.Argument(..., help="Nodo destino."),
+    handle: str = typer.Option("default", "--handle", help="default|pass|fail."),
+    label: str | None = typer.Option(None, "--label", help="Etiqueta de la arista."),
+    loop: bool = typer.Option(False, "--loop", help="Marcar como arista de retorno."),
+    max_iterations: int | None = typer.Option(None, "--max-iterations", help="Límite del bucle."),
+) -> None:
+    """Conectar dos nodos."""
+    _edit(
+        workflow_id,
+        lambda editor: editor.connect(
+            workflow_id,
+            source,
+            target,
+            handle=handle,
+            label=label,
+            loop=loop,
+            max_iterations=max_iterations,
+        ),
+    )
+
+
+@workflow_app.command("set")
+def workflow_set(
+    workflow_id: str = typer.Argument(..., help="ID del workflow."),
+    node_id: str = typer.Argument(..., help="ID del nodo."),
+    key: str = typer.Argument(..., help="Clave de config (p. ej. command, inputs)."),
+    value: str = typer.Argument(..., help="Valor JSON o texto."),
+) -> None:
+    """Asignar una clave de config a un nodo."""
+    _edit(
+        workflow_id,
+        lambda editor: editor.set_config(workflow_id, node_id, key, _parse_value(value)),
+    )
+
+
+@workflow_app.command("add-input")
+def workflow_add_input(
+    workflow_id: str = typer.Argument(..., help="ID del workflow."),
+    input_id: str = typer.Argument(..., help="Nombre de la entrada."),
+    input_type: str = typer.Option("string", "--type", help="Tipo declarado."),
+    required: bool = typer.Option(True, "--required/--no-required", help="Obligatoria."),
+    default: str | None = typer.Option(None, "--default", help="Valor por defecto (JSON o texto)."),
+) -> None:
+    """Declarar una entrada del workflow."""
+    _edit(
+        workflow_id,
+        lambda editor: editor.add_input(
+            workflow_id,
+            input_id,
+            input_type=input_type,
+            required=required,
+            default=_parse_value(default),
+        ),
+    )
+
+
+@workflow_app.command("rm-node")
+def workflow_remove_node(
+    workflow_id: str = typer.Argument(..., help="ID del workflow."),
+    node_id: str = typer.Argument(..., help="ID del nodo a borrar."),
+) -> None:
+    """Borrar un nodo y sus aristas."""
+    _edit(workflow_id, lambda editor: editor.remove_node(workflow_id, node_id))
+
+
+@workflow_app.command("rm-edge")
+def workflow_remove_edge(
+    workflow_id: str = typer.Argument(..., help="ID del workflow."),
+    edge_id: str = typer.Argument(..., help="ID de la arista a borrar."),
+) -> None:
+    """Borrar una arista."""
+    _edit(workflow_id, lambda editor: editor.remove_edge(workflow_id, edge_id))
 
 
 @workflow_app.command("validate")
