@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from pathlib import Path
 from typing import Any
 
 from rich.console import Console, Group, RenderableType
@@ -370,12 +371,16 @@ async def _session(paths: ProjectPaths) -> None:
             await asyncio.gather(*manager.tasks.values(), return_exceptions=True)
 
 
-def run_dashboard() -> None:
-    """Punto de entrada síncrono para el comando `penfold tui`."""
+def run_dashboard(project: Path | None = None) -> None:
+    """Punto de entrada síncrono para el comando `penfold tui`.
+
+    ``project`` permite apuntar a cualquier carpeta; si es None se busca
+    ``.orchestrator/`` hacia arriba desde el directorio actual.
+    """
     try:
-        paths = find_project()
+        paths = find_project(project)
         paths.require_project()
     except PenfoldError as exc:
-        console.print(f"[red]Error:[/red] {exc}. Ejecuta `penfold init` primero.")
+        console.print(f"[red]Error:[/red] {exc}")
         raise SystemExit(1) from exc
     asyncio.run(_session(paths))

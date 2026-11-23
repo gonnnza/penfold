@@ -46,6 +46,9 @@ app.add_typer(agent_app, name="agent")
 app.add_typer(git_app, name="git")
 console = Console()
 
+# Lo fija la opción global --project; None = buscar hacia arriba desde el cwd.
+PROJECT_ROOT: Path | None = None
+
 
 def _fail(message: str, code: int = 1) -> None:
     console.print(f"[red]Error:[/red] {message}")
@@ -53,8 +56,11 @@ def _fail(message: str, code: int = 1) -> None:
 
 
 def _components(paths: ProjectPaths | None = None):
-    paths = paths or find_project()
-    config = paths.require_project()
+    paths = paths or find_project(PROJECT_ROOT)
+    try:
+        config = paths.require_project()
+    except PenfoldError as exc:
+        _fail(str(exc))
     agents = AgentStore(paths)
     workflows = WorkflowStore(paths)
     repository = RunRepository(paths.db_path)
@@ -78,7 +84,17 @@ def _parse_inputs(items: list[str]) -> dict[str, str]:
 def main(
     ctx: typer.Context,
     version: bool = typer.Option(False, "--version", "-V", help="Mostrar la versión."),
+    project: Path | None = typer.Option(
+        None,
+        "--project",
+        help=(
+            "Directorio del proyecto Penfold. Por defecto se usa el directorio actual "
+            "o el primero hacia arriba que contenga .orchestrator/."
+        ),
+    ),
 ) -> None:
+    global PROJECT_ROOT
+    PROJECT_ROOT = project
     if version:
         console.print(f"penfold {__version__}")
         raise typer.Exit()
@@ -94,7 +110,7 @@ def init(
 ) -> None:
     """Inicializar la configuración de Penfold en el proyecto actual."""
     try:
-        paths = ProjectPaths(path)
+        paths = ProjectPaths(PROJECT_ROOT or path)
         paths.init(name=name, force=force)
         n_agents = install_default_agents(paths)
         n_workflows = install_default_workflows(paths)
@@ -134,7 +150,7 @@ def doctor() -> None:
         add("Proyecto inicializado", False, str(exc)[:80])
 
     try:
-        config = find_project().load_config()
+        config = find_project(PROJECT_ROOT).load_config()
         with socket.socket() as sock:
             sock.bind((config.server.host, config.server.port))
         add(f"Puerto {config.server.port}", True, "disponible")
@@ -190,7 +206,7 @@ def start(
 @app.command()
 def tui() -> None:
     """Abrir el dashboard interactivo de terminal (equivalente al panel web)."""
-    run_dashboard()
+    run_dashboard(PROJECT_ROOT)
 
 
 @app.command()

@@ -23,6 +23,39 @@ def test_init_creates_layout(tmp_path) -> None:
     assert again.exit_code == 1
 
 
+def test_global_project_option_works_from_any_directory(tmp_path, monkeypatch) -> None:
+    project = tmp_path / "electrolux"
+    assert runner.invoke(app, ["init", "--path", str(project)]).exit_code == 0
+    elsewhere = tmp_path / "otro-lugar"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)
+
+    result = runner.invoke(app, ["--project", str(project), "workflow", "list"])
+    assert result.exit_code == 0, result.output
+    assert "feature-development" in result.output
+
+
+def test_project_found_from_nested_directory(tmp_path, monkeypatch) -> None:
+    assert runner.invoke(app, ["init", "--path", str(tmp_path)]).exit_code == 0
+    nested = tmp_path / "src" / "deep" / "folder"
+    nested.mkdir(parents=True)
+    monkeypatch.chdir(nested)
+
+    result = runner.invoke(app, ["workflow", "list"])
+    assert result.exit_code == 0, result.output
+    assert "feature-development" in result.output
+
+
+def test_missing_project_gives_actionable_error(tmp_path, monkeypatch) -> None:
+    empty = tmp_path / "sin-proyecto"
+    empty.mkdir()
+    monkeypatch.chdir(empty)
+
+    result = runner.invoke(app, ["workflow", "list"])
+    assert result.exit_code == 1
+    assert "penfold init" in result.output
+
+
 def test_cli_workflow_and_agent_commands(tmp_path, monkeypatch) -> None:
     assert runner.invoke(app, ["init", "--path", str(tmp_path)]).exit_code == 0
     monkeypatch.chdir(tmp_path)

@@ -158,7 +158,9 @@ class ProjectPaths:
     def require_project(self) -> ProjectConfig:
         if not self.exists():
             raise ProjectError(
-                f"No se encontró un proyecto Penfold en {self.root}. Ejecuta `penfold init`."
+                f"No se encontró .orchestrator/ en {self.root} ni en sus padres. "
+                "Ejecuta `penfold init` en esa carpeta o "
+                "`penfold --project <ruta> init` desde cualquier directorio."
             )
         return self.load_config()
 
