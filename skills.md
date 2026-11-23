@@ -37,6 +37,7 @@ Formato de cada entrada:
 | [`escribir-un-adr`](#escribir-un-adr) | validado | 2026-11-23 |
 | [`anadir-endpoint-mvc`](#anadir-endpoint-mvc) | validado | 2026-11-23 |
 | [`usar-dashboard-terminal`](#usar-dashboard-terminal) | validado | 2026-11-23 |
+| [`usar-desde-cualquier-carpeta`](#usar-desde-cualquier-carpeta) | validado | 2026-11-23 |
 
 ---
 
@@ -307,6 +308,42 @@ No es un editor de grafos: edita el YAML en `.orchestrator/workflows/`.
 
 ---
 
+## usar-desde-cualquier-carpeta
+
+**Estado:** validado
+**Cuándo usarla:** al desplegar Penfold como herramienta global o al trabajar en
+un proyecto (p. ej. `/electrolux`) que no es el repo de Penfold.
+
+**Entrada:** ruta al proyecto de usuario (la que contendrá `.orchestrator/`).
+
+**Pasos:**
+1. Instala el comando: `uv tool install .` desde el repo, o
+   `uv tool install git+https://github.com/gonnnza/penfold.git`. Verifica con
+   `penfold --version`.
+2. En el proyecto de usuario: `cd /electrolux && penfold init && penfold tui`.
+3. Desde cualquier otra carpeta, apunta con la opción global (va **antes** del
+   subcomando): `penfold --project /electrolux workflow list`,
+   `penfold --project /electrolux run simple -i "feature_description=JWT"`,
+   `penfold --project /electrolux tui`.
+4. Si no se pasa `--project`, `find_project()` busca `.orchestrator/` en el cwd
+   y en sus padres: funciona desde cualquier subdirectorio del proyecto.
+5. Sin instalación global, equivaldría a
+   `uv run --project /ruta/a/penfold penfold ...`.
+
+**Verificación:** desde `/tmp`, `penfold --project /electrolux workflow list`
+debe listar los 3 workflows de ejemplo; un run de `simple` debe terminar en
+`completed`.
+
+**Trampas:** `--project` es opción del callback, por eso va antes del subcomando;
+`init` además acepta `--path/-p` propio. Si no hay proyecto, el error indica
+cómo inicializarlo. `CommandRuntime` usa `cwd` relativo a la raíz del proyecto,
+no al directorio desde el que se invocó el comando.
+
+**Última práctica:** 2026-11-23 — wheel instalado en venv aislado y ejecutado
+desde `/tmp/opencode/electrolux` y desde `/tmp` con `--project`.
+
+---
+
 ## Registro de cambios
 
 | Fecha | Cambio | Nota |
@@ -317,6 +354,7 @@ No es un editor de grafos: edita el YAML en `.orchestrator/workflows/`.
 | 2026-11-23 | Añadida `usar-dashboard-terminal` tras implementar `penfold tui`. | — |
 | 2026-11-23 | Eliminada `recompilar-ui` y todas las referencias al frontend web. | — |
 | 2026-11-23 | Git dividido en MVC; `anadir-endpoint-mvc` documenta la CLI/TUI como vistas con `penfold git` de ejemplo. | — |
+| 2026-11-23 | Añadida `usar-desde-cualquier-carpeta` (opción global `--project`). | — |
 
 > Si quieres convertir alguna de estas skills en una skill real de OpenCode,
 > muévela a `.opencode/skills/<nombre>/SKILL.md` con frontmatter `name` y

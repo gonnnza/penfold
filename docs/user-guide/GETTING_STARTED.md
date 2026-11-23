@@ -14,22 +14,41 @@ ni Docker. El servidor solo escucha en `127.0.0.1:8765`.
 
 ## 2. Instalar
 
-Desde la raíz del repositorio de Penfold:
+Para tener el comando `penfold` disponible en **cualquier carpeta**, instálalo
+como herramienta con uv:
+
+```bash
+uv tool install git+https://github.com/gonnnza/penfold.git
+# o desde un checkout local: uv tool install /ruta/a/penfold
+penfold --version
+```
+
+Si prefieres no instalarlo, desde la raíz del repositorio:
 
 ```bash
 uv sync --extra dev
 uv run penfold --help
 ```
 
-Después de esto, el binario `penfold` está disponible con `uv run penfold ...`.
+En ese caso usa `uv run penfold ...` en lugar de `penfold ...`.
 
 ## 3. Inicializar un repositorio de usuario
 
-En el repositorio donde quieras trabajar (por ejemplo un proyecto propio):
+En el repositorio donde quieras trabajar (por ejemplo `/electrolux`):
 
 ```bash
-uv run penfold init
-uv run penfold doctor
+cd /electrolux
+penfold init
+penfold doctor
+```
+
+No hace falta estar en el repo de Penfold. Los comandos buscan `.orchestrator/`
+hacia arriba desde el directorio actual. Para apuntar a otro proyecto desde
+cualquier sitio:
+
+```bash
+penfold --project /electrolux workflow list
+penfold --project /electrolux tui
 ```
 
 `init` crea `.orchestrator/` con:

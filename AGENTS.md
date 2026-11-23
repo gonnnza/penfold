@@ -41,6 +41,10 @@ uv run ruff format --check .        # comprueba formato sin modificar
 uv run ruff format .                # aplica formato
 uv run penfold --help               # fuente autoritativa de comandos disponibles
 uv run penfold init && uv run penfold doctor && uv run penfold tui
+
+# Instalado como herramienta (utilizable desde cualquier carpeta)
+uv tool install .          # o: uv tool install git+https://github.com/gonnnza/penfold.git
+penfold --project /ruta/al/proyecto tui
 ```
 
 > El entry point real es `penfold.cli.main:app` (`pyproject.toml`). Comprueba
@@ -155,3 +159,4 @@ expone la API REST y SSE.
 | 2026-11-23 | Eliminada la copia duplicada `src/penfold/static/`; el wheel genera `penfold/static` desde `apps/server/static` con `force-include`. ADR-0007. | — |
 | 2026-11-23 | Eliminado todo el frontend web (`web/`, bundle estático, rutas de UI, `force-include` y ADR-0007). La TUI y la CLI son la única interfaz. | — |
 | 2026-11-23 | Git dividido en MVC: `models/git.py` (`RepoInfo`), `services/git.py` (`GitService`) y vista CLI `penfold git`. Sin cambios en el motor. | — |
+| 2026-11-23 | Opción global `--project` y instalación con `uv tool install`; la CLI funciona desde cualquier carpeta. 39 tests pasan. | — |

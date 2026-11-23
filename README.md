@@ -10,11 +10,11 @@
 ![Local-first](https://img.shields.io/badge/local--first-127.0.0.1%3A8765-green)
 ![Arquitectura](https://img.shields.io/badge/arquitectura-MVC-blueviolet)
 
-**Orquestador visual local-first para equipos de agentes de IA que desarrollan software.**
+**Orquestador local-first de agentes de IA que desarrollan software.**
 
-Define flujos repetibles como grafos YAML versionables y ejecútalos localmente
-con progreso en tiempo real, revisión humana y reanudación desde checkpoints.
-La interfaz es una TUI de terminal: no hay frontend web ni servidor de UI.
+Define flujos repetibles como grafos YAML versionables, edítalos a mano y
+ejecútalos localmente con progreso en tiempo real, revisión humana y
+reanudación desde checkpoints. Desde la terminal, con `penfold tui`.
 
 [Instalación](#instalación) · [Inicio rápido](#inicio-rápido) ·
 [Ejemplo](#ejemplo-mínimo) · [Documentación](#documentación)
@@ -49,13 +49,14 @@ reanudable. Es, en resumen, **Git para la lógica de tus agentes**.
 - 🧠 **Neutralidad de proveedor** — `MockRuntime` determinista o
   `CommandRuntime` con el comando y los argumentos que tú declaras. Nada de
   adivinar flags de CLIs de IA.
-- 🧩 **YAML como fuente de la verdad** — la definición vive en
-  `.orchestrator/workflows/*.yaml`; la posición de los nodos es solo
-  presentación.
-- 📡 **Ejecución observable** — SSE con replay por `after=<seq>` y heartbeat.
+- 🖥️ **Dashboard de terminal** — `penfold tui`: workflows, agentes, historial,
+  ejecución en vivo y aprobaciones sin servidor ni token.
+- 📡 **Ejecución observable** — API REST + SSE con replay por `after=<seq>`.
 - ⏸️ **Reanudable** — los runs interrumpidos pasan a `paused` y continúan sin
   repetir nodos ya exitosos.
 - ✋ **Humano al mando** — aprueba, rechaza o modifica antes de seguir.
+- 🪴 **Git cuando hace falta** — `penfold git status|diff|worktrees`, con
+  operaciones locales no destructivas.
 - 🔒 **Solo local** — `127.0.0.1:8765` y token de acceso local (`0600`).
 
 ### Qué NO es
@@ -65,32 +66,37 @@ reanudable. Es, en resumen, **Git para la lógica de tus agentes**.
 - ❌ Un servicio en la nube: sin cuentas ni sincronización remota.
 - ❌ Un sandbox: los permisos son declaración de intenciones, no aislamiento del
   SO (ver [SECURITY.md](SECURITY.md)).
+- ❌ Un editor visual: el YAML se edita directamente en `.orchestrator/`.
 
 ## Cómo encaja
 
 ```
-  `penfold tui`  ─┐
-                  ├──▶  services/  ◀──  `penfold run ...`
-  FastAPI (views/) ┘          │
-  (API + SSE, sin UI)         ▼
-                     ExecutionEngine
-                             │
-              input | agent | command | condition
-                  | approval | output
-                             │
-                  MockRuntime | CommandRuntime
-                             │
-                  SQLite + YAML + artefactos en .orchestrator/
+  `penfold tui`      `penfold ...`      `penfold start`
+  (dashboard)        (comandos)         (API REST + SSE)
+        │                  │                   │
+        └────────┬─────────┴─────────┬─────────┘
+                 ▼                   ▼
+            services/            views/ (FastAPI)
+     motor · validación · SSE · token
+                 │
+       ExecutionEngine + GitService
+                 │
+       input | agent | command | condition
+           | approval | output
+                 │
+       MockRuntime | CommandRuntime
+                 │
+       SQLite + YAML + artefactos en .orchestrator/
 ```
 
 La lógica vive en `services/`, los contratos de datos en `models/` y el
 transporte HTTP en `views/` ([ADR-0006](docs/architecture/adr/0006-mvc-layering.md)).
-La TUI, la CLI y la API son adaptadores de entrada que llaman a los mismos
-services.
+La CLI y la TUI son adaptadores de entrada que llaman a los mismos services.
+No hay interfaz web: el servidor solo expone la API.
 
 ## Instalación
 
-Requisitos: **Python 3.11+** y [uv](https://docs.astral.sh/uv/). No se necesita
+Requisitos: **Python 3.11+** y [uv](https://docs.astral.sh/uv/). No hacen falta
 Node ni pnpm.
 
 ```bash
@@ -98,23 +104,59 @@ uv sync --extra dev
 uv run penfold --help
 ```
 
-## Inicio rápido
+### Instalar como comando global
+
+Para usar `penfold` desde **cualquier carpeta**, instálalo como herramienta:
+
+```bash
+uv tool install git+https://github.com/gonnnza/penfold.git
+# o, desde un checkout local:
+uv tool install .
+
+penfold --version
+```
+
+## Inicio rápido desde cualquier carpeta
+
+No hace falta estar dentro del repo de Penfold. En el directorio de tu proyecto:
+
+```bash
+cd /electrolux
+penfold init      # crea .orchestrator/ con config, agentes y workflows
+penfold doctor    # comprueba entorno, dependencias y puerto
+penfold tui       # abre el dashboard interactivo de terminal
+```
+
+Todos los comandos buscan `.orchestrator/` en el directorio actual y, si no
+está, en sus padres. También puedes apuntar explícitamente a otro proyecto
+desde cualquier sitio con la opción global `--project`:
+
+```bash
+cd /tmp
+penfold --project /electrolux workflow list
+penfold --project /electrolux run simple -i "feature_description=JWT"
+penfold --project /electrolux tui
+```
+
+Si usas el checkout en vez de la instalación global, sustituye `penfold` por
+`uv run --project /ruta/a/penfold penfold`.
+
+## Inicio rápido (desde el checkout)
 
 ```bash
 uv run penfold init      # crea .orchestrator/ con config, agentes y workflows
 uv run penfold doctor    # comprueba entorno, dependencias y puerto
-uv run penfold start     # arranca en 127.0.0.1:8765 e imprime URL + token
+uv run penfold tui       # abre el dashboard interactivo de terminal
 ```
 
-El token se conserva con permisos `0600` en
+En la TUI puedes listar workflows (`[1]`), ejecutar (`[2]`), consultar el
+historial de runs (`[3]`) y ver agentes (`[4]`). Los eventos y los estados de
+los nodos se actualizan en vivo; si aparece un nodo `approval`, tú decides.
+
+Si necesitas la API: `uv run penfold start` arranca en `127.0.0.1:8765` e
+imprime URL y token. El token también se conserva con permisos `0600` en
 `.orchestrator/state/server.token`. Comprueba el servicio con
 `GET /api/health`.
-
-Para usar la interfaz de terminal:
-
-```bash
-uv run penfold tui
-```
 
 Guía completa: [Getting started](docs/user-guide/GETTING_STARTED.md).
 
@@ -124,13 +166,14 @@ Guía completa: [Getting started](docs/user-guide/GETTING_STARTED.md).
 |---|---|
 | `penfold init` | Inicializa `.orchestrator/` en el proyecto actual. |
 | `penfold doctor` | Diagnostica instalación, configuración y estado local. |
-| `penfold start` | Arranca el servidor local (API y SSE; sin interfaz web). |
 | `penfold tui` | Abre el dashboard interactivo de terminal. |
+| `penfold start` | Arranca la API REST y SSE en localhost. |
 | `penfold run <workflow> -i clave=valor --watch` | Ejecuta un workflow desde la CLI. |
 | `penfold runs` · `inspect <id>` · `logs <id> -f` | Lista y examina ejecuciones y eventos. |
 | `penfold cancel <id>` · `resume <id>` | Cancela o reanuda un run desde su checkpoint. |
 | `penfold workflow list` · `validate <id>` | Lista y valida definiciones YAML. |
 | `penfold agent list` | Lista los agentes configurados. |
+| `penfold git status` · `diff` · `worktrees` | Consulta el repositorio Git local. |
 
 `penfold --help` es la fuente autoritativa de lo disponible en cada momento.
 
@@ -222,8 +265,7 @@ edges:
 
 </details>
 
-Ejecútalo desde la UI (selecciona **Hola Penfold**, rellena `request` y pulsa
-*Ejecutar*), desde la terminal:
+Ejecútalo desde la TUI (`[2] Ejecutar`, escribe `hello`) o desde la terminal:
 
 ```bash
 uv run penfold run hello -i request="Añadir login" --watch
@@ -240,7 +282,7 @@ o con `POST /api/runs` y siguiendo `GET /api/runs/{id}/stream`. Los mapeos
 .orchestrator/
 ├── config.yaml              # configuración del proyecto (sin secretos)
 ├── agents/*.yaml            # definiciones de agentes
-├── workflows/*.yaml         # definiciones de workflows (editables en la UI)
+├── workflows/*.yaml         # definiciones de workflows
 ├── state/penfold.db         # SQLite: runs, node_states, events, approvals
 ├── runs/                    # payloads por run
 └── artifacts/               # artefactos generados
@@ -251,21 +293,24 @@ Solo se versionan `config.yaml`, `agents/` y `workflows/`. Detalles:
 
 ## Estado del MVP
 
-**Fases 0–6** (fundación, config, validación, motor, runtimes, servidor/SSE y
-TUI) más la **Fase 7 en curso**: ejemplos, tests y demo por terminal funcionan;
-quedan CI, retención y revisión de seguridad final ([ROADMAP.md](ROADMAP.md)).
+**Fases 0–6 implementadas y verificadas** (fundación, config, validación,
+motor, runtimes, servidor/SSE y TUI). **Fase 7 en curso**: ejemplos y tests ya
+funcionan; quedan CI, retención y revisión de seguridad final
+([ROADMAP.md](ROADMAP.md)).
 
 Todavía **no** incluye: LangGraph, Docker o contenedores, nube/multiusuario,
-integraciones concretas con CLIs de IA, worktrees aislados por run ni runtimes
-remotos más allá de `mock` y `command`.
+integraciones concretas con CLIs de IA, editor visual, worktrees aislados por
+run ni runtimes remotos más allá de `mock` y `command`.
 
 ## Desarrollo
 
 ```bash
-uv run pytest                       # backend
+uv run pytest                       # tests
 uv run ruff check .                 # lint (E, F, I, UP; línea 100)
 uv run ruff format --check .        # formato
 ```
+
+Los cambios arquitectónicos requieren un ADR en `docs/architecture/adr/`.
 
 ## Documentación
 
