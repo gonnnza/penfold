@@ -160,10 +160,25 @@ uv run penfold doctor    # comprueba entorno, dependencias y puerto
 uv run penfold tui       # abre el dashboard interactivo de terminal
 ```
 
-En la TUI puedes listar workflows (`[1]`), ejecutar (`[2]`), consultar el
-historial de runs (`[3]`), ver agentes (`[4]`), dibujar el grafo (`[5]`) y
-**editar workflows** (`[6]`) de forma interactiva. Los eventos y los estados de
-los nodos se actualizan en vivo; si aparece un nodo `approval`, tú decides.
+`penfold tui` (y `penfold .`) abre una **interfaz full-screen estilo lazygit**:
+una columna con los workflows, otra con el diagrama o el historial de
+ejecuciones, y una barra inferior de atajos. Se navega con una sola tecla,
+sin menús numerados:
+
+| Tecla | Acción |
+|---|---|
+| `j` / `k` (o ↑/↓) | Mover la selección |
+| `Enter` | Ejecutar el workflow seleccionado |
+| `n` | Crear un workflow nuevo |
+| `d` / `r` | Alternar entre diagrama e historial de runs |
+| `f` | Refrescar |
+| `q` / `Esc` | Salir (queda un panel final en pantalla) |
+
+Si la terminal no es interactiva, o prefieres el menú por prompts clásico, usa
+`penfold tui --classic`. En ese modo hay opciones para listar workflows,
+ejecutar, ver runs, ver agentes, dibujar el grafo (`[5]`) y editar workflows
+(`[6]`). Los eventos y estados se actualizan en vivo; si aparece `approval`,
+tú decides.
 
 Para construir un workflow sin la TUI:
 

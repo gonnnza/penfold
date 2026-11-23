@@ -32,6 +32,7 @@ from penfold.services.workflow_store import WorkflowStore
 from penfold.services.workflow_templates import install_default_workflows
 from penfold.tui import run_dashboard
 from penfold.tui.diagram import build_diagram
+from penfold.tui.lazy import run_lazy
 from penfold.views.auth import new_token
 
 app = typer.Typer(
@@ -141,7 +142,7 @@ def open_here() -> None:
         except PenfoldError as exc:
             _fail(str(exc))
     console.print(f"[dim]Proyecto:[/dim] {paths.root}")
-    run_dashboard(paths.root)
+    run_lazy(paths.root)
 
 
 @app.command()
@@ -225,9 +226,14 @@ def start(
 
 
 @app.command()
-def tui() -> None:
-    """Abrir el dashboard interactivo de terminal (equivalente al panel web)."""
-    run_dashboard(PROJECT_ROOT)
+def tui(
+    classic: bool = typer.Option(False, "--classic", help="Usa el dashboard por prompts."),
+) -> None:
+    """Abrir la interfaz full-screen (estilo lazygit) o el dashboard clásico."""
+    if classic:
+        run_dashboard(PROJECT_ROOT)
+    else:
+        run_lazy(PROJECT_ROOT)
 
 
 @app.command()

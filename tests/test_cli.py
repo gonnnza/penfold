@@ -27,7 +27,7 @@ def test_dot_command_initializes_and_opens_dashboard(tmp_path, monkeypatch) -> N
     from penfold.cli import main as cli_main
 
     calls: list[object] = []
-    monkeypatch.setattr(cli_main, "run_dashboard", lambda root: calls.append(root))
+    monkeypatch.setattr(cli_main, "run_lazy", lambda root: calls.append(root))
     monkeypatch.chdir(tmp_path)
 
     result = runner.invoke(app, ["."])
