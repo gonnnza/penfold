@@ -23,6 +23,7 @@ from penfold.services.agent_store import AgentStore
 from penfold.services.agent_templates import install_default_agents
 from penfold.services.approval import ConsoleApprovalGate
 from penfold.services.events import EventBus
+from penfold.services.git import GitService
 from penfold.services.manager import RunManager
 from penfold.services.repository import RunRepository
 from penfold.services.validator import validate_workflow
@@ -39,8 +40,10 @@ app = typer.Typer(
 )
 workflow_app = typer.Typer(help="Gestionar workflows.")
 agent_app = typer.Typer(help="Gestionar agentes.")
+git_app = typer.Typer(help="Consultar el repositorio Git del proyecto.")
 app.add_typer(workflow_app, name="workflow")
 app.add_typer(agent_app, name="agent")
+app.add_typer(git_app, name="git")
 console = Console()
 
 
@@ -437,3 +440,54 @@ def agent_list() -> None:
             item.id, item.name, item.runtime.type, item.permissions.mode, item.outputs.format
         )
     console.print(table)
+
+
+def _git_service(path: Path) -> GitService:
+    """Adaptador CLI: resuelve el service y convierte sus errores en salida CLI."""
+    try:
+        return GitService(path)
+    except PenfoldError as exc:
+        _fail(str(exc))
+
+
+@git_app.command("status")
+def git_status(
+    path: Path = typer.Option(Path.cwd(), "--path", "-p", help="Directorio del repositorio."),
+) -> None:
+    """Mostrar rama, limpieza y archivos modificados del repositorio."""
+    info = _git_service(path).info()
+    table = Table(title="Repositorio Git")
+    table.add_column("Raíz")
+    table.add_column("Rama", style="cyan")
+    table.add_column("Estado")
+    table.add_column("Archivos modificados")
+    table.add_row(
+        str(info.root),
+        info.branch,
+        "[green]limpio[/green]" if info.clean else "[yellow]con cambios[/yellow]",
+        "\n".join(info.changed_files) or "—",
+    )
+    console.print(table)
+
+
+@git_app.command("diff")
+def git_diff(
+    path: Path = typer.Option(Path.cwd(), "--path", "-p", help="Directorio del repositorio."),
+    staged: bool = typer.Option(False, "--staged", help="Mostrar los cambios en el índice."),
+) -> None:
+    """Mostrar el diff del repositorio en formato estadístico."""
+    output = _git_service(path).diff(staged=staged).strip()
+    console.print(output or "Sin diferencias.")
+
+
+@git_app.command("worktrees")
+def git_worktrees(
+    path: Path = typer.Option(Path.cwd(), "--path", "-p", help="Directorio del repositorio."),
+) -> None:
+    """Listar los worktrees del repositorio."""
+    lines = _git_service(path).worktrees()
+    if not lines:
+        console.print("No hay worktrees.")
+        return
+    for line in lines:
+        console.print(line)

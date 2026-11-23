@@ -30,6 +30,7 @@ from penfold.models.execution import (
     RunSummary,
     StartRunRequest,
 )
+from penfold.models.git import RepoInfo
 from penfold.models.runtime import RuntimeContext, RuntimeResult
 from penfold.models.workflow import (
     EdgeConfig,
@@ -67,6 +68,7 @@ __all__ = [
     "RunEvent",
     "RunStatus",
     "RunSummary",
+    "RepoInfo",
     "SecurityConfig",
     "ServerConfig",
     "StartRunRequest",

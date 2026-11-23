@@ -118,7 +118,7 @@ Un "proveedor" identifica el origen de un agente (`runtime.provider` y
 Para añadir uno:
 
 1. Decide si basta con un nuevo `AgentRuntime` (lo habitual) o si hace falta un
-   adaptador en `src/penfold/integrations/`.
+   service nuevo en `src/penfold/services/` (p. ej. `services/git.py`).
 2. No asumas parámetros de CLI: declara en la definición del agente el `command`
    y los `args` exactos, o una variable de entorno con el punto de acceso.
 3. Los secretos van en variables de entorno, nunca en YAML ni en la base de
